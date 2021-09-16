@@ -1,5 +1,6 @@
 package net.prominic.AddInDirector;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Calendar;
 
@@ -9,12 +10,14 @@ import lotus.domino.Session;
 import lotus.notes.addins.JavaServerAddin;
 import lotus.notes.internal.MessageQueue;
 
+import net.prominic.utils.RESTClient;
+
 public class App extends JavaServerAddin {
 	// Constants
 	private final String		JADDIN_NAME				= "AddInDirector";
 	private final String		JADDIN_VERSION			= "0.1.0";
-	private final String		JADDIN_DATE				= "2021-09-16 16:30";
-
+	private final String		JADDIN_DATE				= "2021-09-16 17:30 (dac)";
+	
 	// MessageQueue Constants
 	public static final int MQ_MAX_MSGSIZE = 1024;
 	// this is already defined (should be = 1):
@@ -28,6 +31,7 @@ public class App extends JavaServerAddin {
 
 	private String[] 		args 					= null;
 	private int 			dominoTaskID			= 0;
+	private String			dac						= "";
 
 	// constructor if parameters are provided
 	public App(String[] args) {
@@ -38,15 +42,32 @@ public class App extends JavaServerAddin {
 
 	@Override
 	public void runNotes () {
+		// Set the Java thread name to the class name (default would be "Thread-n")
 		this.setName(JADDIN_NAME);
-		setAddinState("Initializing");
 
 		// Create the status line showed in 'Show Task' console command
 		this.dominoTaskID = createAddinStatusLine(this.JADDIN_NAME);
 
+		setAddinState("Initializing");
+
 		try {
 			m_session = NotesFactory.createSession();
 
+			if (args != null && args.length > 0) {
+				dac = args[0];
+				if ("dev".equals(dac)) {
+					dac = "https://domino-1.dmytro.cloud/dac.nsf";
+				}
+			}
+			else {
+				dac = "https://domino-1.dmytro.cloud/dac.nsf";
+			}
+			
+			// check if connection could be established
+			if (!check()) {
+				logMessage("connection (*FAILED*) with: " + dac);
+			}
+			
 			showInfo();
 
 			listen();
@@ -97,6 +118,20 @@ public class App extends JavaServerAddin {
 			e.printStackTrace();
 		}
 	}
+	
+	/*
+	 * test connection with Domino App Catalog (dac.nsf)
+	 */
+	private boolean check() {
+		StringBuffer buf = new StringBuffer();
+		try {
+			String url = dac.concat("/check?openagent");
+			buf = RESTClient.sendGET(url);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return buf.toString().equals("OK");
+	}
 
 	private void resolveMessageQueueState(String cmd) {
 		if ("-h".equals(cmd) || "help".equals(cmd)) {
@@ -104,6 +139,14 @@ public class App extends JavaServerAddin {
 		}
 		else if ("-i".equals(cmd) || "info".equals(cmd)) {
 			showInfo();
+		}
+		else if ("-c".equals(cmd) || "check".equals(cmd)) {
+			if (check()) {
+				logMessage("OK to connect with with: " + dac);
+			}
+			else {
+				logMessage("*FAILED* to connect with: " + dac);
+			}
 		}
 		else {
 			logMessage("invalid command (use -h or help to get details)");
@@ -118,6 +161,7 @@ public class App extends JavaServerAddin {
 		AddInLogMessageText("   quit       Unload AddInDirector");
 		AddInLogMessageText("   help       Show help information (or -h)");
 		AddInLogMessageText("   info       Show version and more of AddInDirector (or -i)");
+		AddInLogMessageText("   check      Check connection with Domino App Catalog (or -c)");
 		AddInLogMessageText("Copyright (C) Prominic.NET, Inc. 2021" + (year > 2021 ? " - " + Integer.toString(year) : ""));
 		AddInLogMessageText("See https://prominic.net for more details.");
 	}
@@ -125,7 +169,8 @@ public class App extends JavaServerAddin {
 	private void showInfo() {
 		logMessage("version      " + this.JADDIN_VERSION);
 		logMessage("date         " + this.JADDIN_DATE);
-		logMessage("parameters   " + Arrays.toString(this.args));		
+		logMessage("app catalog  " + this.dac);
+		logMessage("parameters   " + Arrays.toString(this.args));
 	}
 
 	/**
