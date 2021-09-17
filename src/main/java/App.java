@@ -1,5 +1,3 @@
-package net.prominic.AddInDirector;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -14,7 +12,7 @@ import net.prominic.utils.RESTClient;
 
 public class App extends JavaServerAddin {
 	// Constants
-	private final String		JADDIN_NAME				= "AddInDirector";
+	private final String		JADDIN_NAME				= "Genesis";
 	private final String		JADDIN_VERSION			= "0.1.0";
 	private final String		JADDIN_DATE				= "2021-09-16 17:30 (dac)";
 	
@@ -108,7 +106,7 @@ public class App extends JavaServerAddin {
 					return;
 				}
 
-				// check messages for AddInDirector
+				// check messages for Genesis
 				String cmd = qBuffer.toString().trim();
 				if (!cmd.isEmpty()) {
 					resolveMessageQueueState(cmd);
@@ -156,11 +154,11 @@ public class App extends JavaServerAddin {
 	private void showHelp() {
 		int year = Calendar.getInstance().get(Calendar.YEAR);
 		logMessage("*** Usage ***");
-		AddInLogMessageText("load runjava AddInDirector");
-		AddInLogMessageText("tell AddInDirector <command>");
-		AddInLogMessageText("   quit       Unload AddInDirector");
+		AddInLogMessageText("load runjava Genesis");
+		AddInLogMessageText("tell Genesis <command>");
+		AddInLogMessageText("   quit       Unload Genesis");
 		AddInLogMessageText("   help       Show help information (or -h)");
-		AddInLogMessageText("   info       Show version and more of AddInDirector (or -i)");
+		AddInLogMessageText("   info       Show version and more of Genesis (or -i)");
 		AddInLogMessageText("   check      Check connection with Domino App Catalog (or -c)");
 		AddInLogMessageText("Copyright (C) Prominic.NET, Inc. 2021" + (year > 2021 ? " - " + Integer.toString(year) : ""));
 		AddInLogMessageText("See https://prominic.net for more details.");
