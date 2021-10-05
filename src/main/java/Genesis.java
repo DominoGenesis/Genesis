@@ -17,20 +17,18 @@ public class Genesis extends JavaServerAddin {
 	private final String		JADDIN_DATE				= "2021-09-17 17:30 (dac)";
 	
 	// MessageQueue Constants
-	public static final int MQ_MAX_MSGSIZE = 1024;
-	// this is already defined (should be = 1):
-	public static final int	MQ_WAIT_FOR_MSG = MessageQueue.MQ_WAIT_FOR_MSG;
-
+	private static final int 	MQ_MAX_MSGSIZE 			= 1024;
 	// Message Queue name for this Addin (normally uppercase);
 	// MSG_Q_PREFIX is defined in JavaServerAddin.class
-	final String 			qName 					= MSG_Q_PREFIX + JADDIN_NAME.toUpperCase();
-	MessageQueue 			mq						= null;
-	Session 				m_session				= null;
+	private final String 		qName 					= MSG_Q_PREFIX + JADDIN_NAME.toUpperCase();
+	
+	MessageQueue 				mq						= null;
+	Session 					m_session				= null;
 
-	private String[] 		args 					= null;
-	private int 			dominoTaskID			= 0;
-	private String			dac						= "";
-	private String			bufState				= "";
+	private String[] 			args 					= null;
+	private int 				dominoTaskID			= 0;
+	private String				catalog					= "";
+	private String				bufState				= "";
 
 	// constructor if parameters are provided
 	public Genesis(String[] args) {
@@ -53,18 +51,18 @@ public class Genesis extends JavaServerAddin {
 			m_session = NotesFactory.createSession();
 
 			if (args != null && args.length > 0) {
-				dac = args[0];
-				if ("dev".equals(dac)) {
-					dac = "https://domino-1.dmytro.cloud/dac.nsf";
+				catalog = args[0];
+				if ("dev".equals(catalog)) {
+					catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 				}
 			}
 			else {
-				dac = "https://domino-1.dmytro.cloud/dac.nsf";
+				catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 			}
 			
 			// check if connection could be established
 			if (!check()) {
-				logMessage("connection (*FAILED*) with: " + dac);
+				logMessage("connection (*FAILED*) with: " + catalog);
 			}
 			
 			showInfo();
@@ -106,7 +104,7 @@ public class Genesis extends JavaServerAddin {
 				if (messageQueueState == MessageQueue.ERR_MQ_QUITTING) {
 					return;
 				}
-
+				
 				// check messages for Genesis
 				String cmd = qBuffer.toString().trim();
 				if (!cmd.isEmpty()) {
@@ -124,7 +122,7 @@ public class Genesis extends JavaServerAddin {
 	private boolean check() {
 		StringBuffer buf = new StringBuffer();
 		try {
-			String url = dac.concat("/check?openagent");
+			String url = catalog.concat("/check?openagent");
 			buf = RESTClient.sendGET(url);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -141,10 +139,10 @@ public class Genesis extends JavaServerAddin {
 		}
 		else if ("-c".equals(cmd) || "check".equals(cmd)) {
 			if (check()) {
-				logMessage("OK to connect with with: " + dac);
+				logMessage("OK to connect with with: " + catalog);
 			}
 			else {
-				logMessage("*FAILED* to connect with: " + dac);
+				logMessage("*FAILED* to connect with: " + catalog);
 			}
 		}
 		else {
@@ -168,7 +166,7 @@ public class Genesis extends JavaServerAddin {
 	private void showInfo() {
 		logMessage("version      " + this.JADDIN_VERSION);
 		logMessage("date         " + this.JADDIN_DATE);
-		logMessage("app catalog  " + this.dac);
+		logMessage("app catalog  " + this.catalog);
 		logMessage("parameters   " + Arrays.toString(this.args));
 	}
 
