@@ -34,15 +34,15 @@ JAVAUSERCLASSES=.\JavaAddin\Genesis.jar
 # How to run Genesis
 
 ```
-load runjava net.prominic.Genesis.App
+load runjava Genesis
 ```
 
 # Example of commands
 
 ```
-tell net.prominic.Genesis.App help
+tell Genesis help
 ```
 
 ```
-tell net.prominic.Genesis.App info
+tell Genesis info
 ```
