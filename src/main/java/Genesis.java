@@ -33,11 +33,11 @@ public class Genesis extends JavaServerAddin {
 	private String			bufState				= "";
 
 	// constructor if parameters are provided
-	public App(String[] args) {
+	public Genesis(String[] args) {
 		this.args = args;
 	}
 
-	public App() {}
+	public Genesis() {}
 
 	@Override
 	public void runNotes () {
