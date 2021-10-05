@@ -14,7 +14,7 @@ public class Genesis extends JavaServerAddin {
 	// Constants
 	private final String		JADDIN_NAME				= "Genesis";
 	private final String		JADDIN_VERSION			= "0.1.0";
-	private final String		JADDIN_DATE				= "2021-09-17 17:30 (dac)";
+	private final String		JADDIN_DATE				= "2021-10-05 17:30 (draft)";
 	
 	// MessageQueue Constants
 	private static final int 	MQ_MAX_MSGSIZE 			= 1024;
