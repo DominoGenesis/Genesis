@@ -166,7 +166,7 @@ public class Genesis extends JavaServerAddin {
 	private void showInfo() {
 		logMessage("version      " + this.JADDIN_VERSION);
 		logMessage("date         " + this.JADDIN_DATE);
-		logMessage("app catalog  " + this.catalog);
+		logMessage("catalog      " + this.catalog);
 		logMessage("parameters   " + Arrays.toString(this.args));
 	}
 
@@ -222,11 +222,16 @@ public class Genesis extends JavaServerAddin {
 		try {
 			AddInDeleteStatusLine(dominoTaskID);
 
+			if (this.mq != null) {
+				this.mq.close(0);
+				this.mq = null;
+			}
+
 			if (this.m_session != null) {
 				this.m_session.recycle();
 				this.m_session = null;
 			}
-
+			
 			logMessage("UNLOADED (OK) " + JADDIN_VERSION);
 		} catch (NotesException e) {
 			logMessage("UNLOADED (**FAILED**) " + JADDIN_VERSION);
