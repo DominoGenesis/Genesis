@@ -1,5 +1,3 @@
-package net.prominic.Genesis;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -12,7 +10,7 @@ import lotus.notes.internal.MessageQueue;
 
 import net.prominic.utils.RESTClient;
 
-public class App extends JavaServerAddin {
+public class Genesis extends JavaServerAddin {
 	// Constants
 	private final String		JADDIN_NAME				= "Genesis";
 	private final String		JADDIN_VERSION			= "0.1.0";
@@ -32,6 +30,7 @@ public class App extends JavaServerAddin {
 	private String[] 		args 					= null;
 	private int 			dominoTaskID			= 0;
 	private String			dac						= "";
+	private String			bufState				= "";
 
 	// constructor if parameters are provided
 	public App(String[] args) {
@@ -97,6 +96,7 @@ public class App extends JavaServerAddin {
 				return;
 			}
 
+			setAddinState("Idle");
 			while (this.addInRunning() && (messageQueueState != MessageQueue.ERR_MQ_QUITTING)) {
 				/* gives control to other task in non preemptive os*/
 				OSPreemptOccasionally();
@@ -104,7 +104,6 @@ public class App extends JavaServerAddin {
 				// check for command from console
 				messageQueueState = mq.get(qBuffer, MQ_MAX_MSGSIZE, MessageQueue.MQ_WAIT_FOR_MSG, 1000);
 				if (messageQueueState == MessageQueue.ERR_MQ_QUITTING) {
-					setAddinState("Quit");
 					return;
 				}
 
@@ -193,7 +192,10 @@ public class App extends JavaServerAddin {
 		if (this.dominoTaskID == 0)
 			return;
 
-		AddInSetStatusLine(this.dominoTaskID, text);
+		if (!text.equals(this.bufState)) {
+			AddInSetStatusLine(this.dominoTaskID, text);
+			this.bufState = text;
+		}
 	}
 
 	/**
