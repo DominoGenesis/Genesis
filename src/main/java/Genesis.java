@@ -1,4 +1,5 @@
 import java.io.IOException;
+
 import java.util.Arrays;
 import java.util.Calendar;
 
@@ -8,13 +9,13 @@ import lotus.domino.Session;
 import lotus.notes.addins.JavaServerAddin;
 import lotus.notes.internal.MessageQueue;
 
-import net.prominic.utils.RESTClient;
+import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddin {
 	// Constants
 	private final String		JADDIN_NAME				= "Genesis";
-	private final String		JADDIN_VERSION			= "0.1.0";
-	private final String		JADDIN_DATE				= "2021-10-05 17:30 (draft)";
+	private final String		JADDIN_VERSION			= "0.1.1";
+	private final String		JADDIN_DATE				= "2021-11-24 17:30 (draft)";
 	
 	// MessageQueue Constants
 	private static final int 	MQ_MAX_MSGSIZE 			= 1024;
@@ -123,7 +124,7 @@ public class Genesis extends JavaServerAddin {
 		StringBuffer buf = new StringBuffer();
 		try {
 			String url = catalog.concat("/check?openagent");
-			buf = RESTClient.sendGET(url);
+			buf = HTTP.get(url);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

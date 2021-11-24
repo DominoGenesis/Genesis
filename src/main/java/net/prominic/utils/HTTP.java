@@ -10,10 +10,11 @@ import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class RESTClient {
-	private static final String USER_AGENT = "AddInDirector";
-
-	public static StringBuffer sendPOST(String endpoint, String data) throws IOException {
+/*
+ * Just an example of HTTP client with post/get methods
+ */
+public class HTTP {
+	public static StringBuffer post(String endpoint, String data) throws IOException {
 		HttpURLConnection con = open(endpoint);
 		con.setDoOutput(true);
 		con.setRequestMethod("POST");
@@ -23,9 +24,10 @@ public class RESTClient {
 		return response(con);
 	}
 
-	public static StringBuffer sendGET(String endpoint) throws IOException {
+	public static StringBuffer get(String endpoint) throws IOException {
 		HttpURLConnection con = open(endpoint);
 		con.setRequestMethod("GET");
+		
 		return response(con);
 	}
 
@@ -34,30 +36,22 @@ public class RESTClient {
 
 		HttpURLConnection con = null;
 		String protocol = url.getProtocol();
-		if (protocol.equals("https")) {
+		if ("https".equals(protocol)) {
 			con = (HttpsURLConnection) url.openConnection();
 		}
-		else if(protocol.equals("http")) {
+		else if("http".equals(protocol)) {
 			con = (HttpURLConnection) url.openConnection();
 		}
-
-		if (con == null) {
-			throw new IllegalArgumentException("Unexpected protocol: " + protocol);
+		else {
+			throw new IllegalArgumentException("Unexpected protocol: " + protocol);			
 		}
 
 		con.setConnectTimeout(5000); //set timeout to 5 seconds
-		con.setRequestProperty("User-Agent", USER_AGENT);
 
 		return con;
 	}
 
 	private static StringBuffer response(HttpURLConnection con) throws IOException {
-		int responseCode = con.getResponseCode();
-		if (responseCode != HttpURLConnection.HTTP_OK) {
-			con.disconnect();
-			throw new IOException("Unexpected response code: " + Integer.toString(responseCode));
-		}
-
 		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		StringBuffer response = new StringBuffer();
 		String inputLine;

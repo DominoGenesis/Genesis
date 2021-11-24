@@ -9,6 +9,34 @@
 	<name>Genesis</name>
 	<url>http://maven.apache.org</url>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.2.4</version>
+				<configuration>
+					<!-- put your configurations here -->
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<artifactSet>
+								<excludes>
+									<!-- Exclude jars -->
+								</excludes>
+							</artifactSet>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -28,6 +56,7 @@
 			<groupId>org.glassfish.corba</groupId>
 			<artifactId>glassfish-corba-omgapi</artifactId>
 			<version>4.2.1</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
