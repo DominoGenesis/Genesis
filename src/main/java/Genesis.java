@@ -14,15 +14,15 @@ import net.prominic.utils.HTTP;
 public class Genesis extends JavaServerAddin {
 	// Constants
 	private final String		JADDIN_NAME				= "Genesis";
-	private final String		JADDIN_VERSION			= "0.1.1";
-	private final String		JADDIN_DATE				= "2021-11-24 17:30 (draft)";
-	
+	private final String		JADDIN_VERSION			= "0.1.3";
+	private final String		JADDIN_DATE				= "2022-02-08 17:30 (list, intall)";
+
 	// MessageQueue Constants
 	private static final int 	MQ_MAX_MSGSIZE 			= 1024;
 	// Message Queue name for this Addin (normally uppercase);
 	// MSG_Q_PREFIX is defined in JavaServerAddin.class
 	private final String 		qName 					= MSG_Q_PREFIX + JADDIN_NAME.toUpperCase();
-	
+
 	MessageQueue 				mq						= null;
 	Session 					m_session				= null;
 
@@ -60,12 +60,12 @@ public class Genesis extends JavaServerAddin {
 			else {
 				catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 			}
-			
+
 			// check if connection could be established
 			if (!check()) {
 				logMessage("connection (*FAILED*) with: " + catalog);
 			}
-			
+
 			showInfo();
 
 			listen();
@@ -105,7 +105,7 @@ public class Genesis extends JavaServerAddin {
 				if (messageQueueState == MessageQueue.ERR_MQ_QUITTING) {
 					return;
 				}
-				
+
 				// check messages for Genesis
 				String cmd = qBuffer.toString().trim();
 				if (!cmd.isEmpty()) {
@@ -116,7 +116,7 @@ public class Genesis extends JavaServerAddin {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/*
 	 * test connection with Domino App Catalog (dac.nsf)
 	 */
@@ -135,10 +135,10 @@ public class Genesis extends JavaServerAddin {
 		if ("-h".equals(cmd) || "help".equals(cmd)) {
 			showHelp();
 		}
-		else if ("-i".equals(cmd) || "info".equals(cmd)) {
+		else if ("info".equals(cmd)) {
 			showInfo();
 		}
-		else if ("-c".equals(cmd) || "check".equals(cmd)) {
+		else if ("check".equals(cmd)) {
 			if (check()) {
 				logMessage("OK to connect with with: " + catalog);
 			}
@@ -146,8 +146,27 @@ public class Genesis extends JavaServerAddin {
 				logMessage("*FAILED* to connect with: " + catalog);
 			}
 		}
+		else if ("-l".equals(cmd) || "list".equals(cmd)) {
+			showList();
+		}
+		else if("-i".equals(cmd) || "install".equals(cmd)) {
+			logMessage("... not implemented yet ...");
+		}
 		else {
 			logMessage("invalid command (use -h or help to get details)");
+		}
+	}
+
+	private void showList() {
+		try {
+			StringBuffer list = HTTP.get(catalog.concat("/list?openagent"));
+			String[] listArr = list.toString().split("\\|");
+			logMessage("*** List of App registered in Genesis Catalog ***");
+			for(int i = 0; i < listArr.length; i++) {
+				logMessage("   ".concat(listArr[i]));	
+			}
+		} catch (IOException e) {
+			logMessage(e.getMessage());
 		}
 	}
 
@@ -156,10 +175,12 @@ public class Genesis extends JavaServerAddin {
 		logMessage("*** Usage ***");
 		AddInLogMessageText("load runjava Genesis");
 		AddInLogMessageText("tell Genesis <command>");
-		AddInLogMessageText("   quit       Unload Genesis");
-		AddInLogMessageText("   help       Show help information (or -h)");
-		AddInLogMessageText("   info       Show version and more of Genesis (or -i)");
-		AddInLogMessageText("   check      Check connection with Domino App Catalog (or -c)");
+		AddInLogMessageText("   quit             Unload Genesis");
+		AddInLogMessageText("   help             Show help information (or -h)");
+		AddInLogMessageText("   info             Show version and more of Genesis");
+		AddInLogMessageText("   check            Check connection with Domino App Catalog");
+		AddInLogMessageText("   list             List of available Java addin in the Catalog");
+		AddInLogMessageText("   install <name>   Install Java addin from the storage");
 		AddInLogMessageText("Copyright (C) Prominic.NET, Inc. 2021" + (year > 2021 ? " - " + Integer.toString(year) : ""));
 		AddInLogMessageText("See https://prominic.net for more details.");
 	}
@@ -232,7 +253,7 @@ public class Genesis extends JavaServerAddin {
 				this.m_session.recycle();
 				this.m_session = null;
 			}
-			
+
 			logMessage("UNLOADED (OK) " + JADDIN_VERSION);
 		} catch (NotesException e) {
 			logMessage("UNLOADED (**FAILED**) " + JADDIN_VERSION);

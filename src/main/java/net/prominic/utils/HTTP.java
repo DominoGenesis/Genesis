@@ -15,7 +15,8 @@ import javax.net.ssl.HttpsURLConnection;
  */
 public class HTTP {
 	public static StringBuffer post(String endpoint, String data) throws IOException {
-		HttpURLConnection con = open(endpoint);
+		HttpURLConnection con = getConnection(endpoint);
+
 		con.setDoOutput(true);
 		con.setRequestMethod("POST");
 		con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
@@ -25,13 +26,14 @@ public class HTTP {
 	}
 
 	public static StringBuffer get(String endpoint) throws IOException {
-		HttpURLConnection con = open(endpoint);
+		HttpURLConnection con = getConnection(endpoint);
+
 		con.setRequestMethod("GET");
-		
+
 		return response(con);
 	}
 
-	private static HttpURLConnection open(String endpoint) throws IOException {
+	private static HttpURLConnection getConnection(String endpoint) throws IOException {
 		URL url = new URL(endpoint);
 
 		HttpURLConnection con = null;
@@ -52,10 +54,19 @@ public class HTTP {
 	}
 
 	private static StringBuffer response(HttpURLConnection con) throws IOException {
-		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+		// handle error response code it occurs
+		int responseCode = con.getResponseCode();
+		InputStream inputStream;
+		if (200 <= responseCode && responseCode <= 299) {
+			inputStream = con.getInputStream();
+		} else {
+			inputStream = con.getErrorStream();
+		}
+
+		BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+
 		StringBuffer response = new StringBuffer();
 		String inputLine;
-
 		while ((inputLine = in.readLine()) != null) {
 			response.append(inputLine);
 		}
