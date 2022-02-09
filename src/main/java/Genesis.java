@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.IOException;
 
 import java.util.Arrays;
@@ -14,14 +15,17 @@ import net.prominic.utils.HTTP;
 public class Genesis extends JavaServerAddin {
 	// Constants
 	private final String		JADDIN_NAME				= "Genesis";
-	private final String		JADDIN_VERSION			= "0.1.3";
-	private final String		JADDIN_DATE				= "2022-02-08 17:30 (list, intall)";
+	private final String		JADDIN_VERSION			= "0.2.0";
+	private final String		JADDIN_DATE				= "2022-02-09 13:30 (list, intall, register)";
+
+	private final String 		JAVA_USER_CLASSES 		= "JAVAUSERCLASSES";
 
 	// MessageQueue Constants
-	private static final int 	MQ_MAX_MSGSIZE 			= 1024;
 	// Message Queue name for this Addin (normally uppercase);
 	// MSG_Q_PREFIX is defined in JavaServerAddin.class
+	private static final int 	MQ_MAX_MSGSIZE 			= 1024;
 	private final String 		qName 					= MSG_Q_PREFIX + JADDIN_NAME.toUpperCase();
+
 
 	MessageQueue 				mq						= null;
 	Session 					m_session				= null;
@@ -149,11 +153,84 @@ public class Genesis extends JavaServerAddin {
 		else if ("-l".equals(cmd) || "list".equals(cmd)) {
 			showList();
 		}
-		else if("-i".equals(cmd) || "install".equals(cmd)) {
-			logMessage("... not implemented yet ...");
+		else if(cmd.startsWith("-i") || cmd.startsWith("install")) {
+			install(cmd);
 		}
 		else {
-			logMessage("invalid command (use -h or help to get details)");
+			logMessage("Command is not recognized (use -h or help to get details)");
+		}
+	}
+
+	// TODO: work in progress
+	private void install(String cmd) {
+		try {
+			String[] optArr = cmd.split("\\s+");
+			if (optArr.length != 2) {
+				logMessage("Install command should have only 1 parameter (addin name)");
+				return;
+			}
+
+			String name = optArr[1];
+			StringBuffer buf = HTTP.get(catalog + "/app?openagent&name=" + name);
+			String[] bufArr = buf.toString().split("\\|");
+
+			if (bufArr[0].startsWith("error")) {
+				logMessage(bufArr[0]);
+				return;
+			}
+
+			String latest = bufArr[0];
+			String[] latestArr = latest.split(";");
+			String version = latestArr[0];
+			String url = catalog + "/" + latestArr[1];
+			String fileName = latestArr[1].substring(latestArr[1].lastIndexOf("/") + 1);
+			String filePath = "javaaddin" + File.separator + fileName;
+			logMessage("detected version: " + version);
+			logMessage("url: " + url);
+			logMessage("filename: " + fileName);
+			logMessage("will be downloaded to: " + filePath);
+			boolean downloaded = HTTP.saveURLTo(url, filePath);
+			if (!downloaded) {
+				logMessage("> filed (not downloaded)");
+				return;
+			}
+
+			logMessage("> ok (downloaded)");
+
+			registerAddin(filePath);
+
+		} catch (IOException e) {
+			logMessage("Install command failed: " + e.getMessage());
+		}
+	}
+
+	private void registerAddin(String filePath) {
+		try {
+			// 4. register new JAR in notes.ini
+			// Example: JAVAUSERCLASSESEXT=.\DominoMeterAddin\DominoMeter-5.jar
+			String userClasses = m_session.getEnvironmentString(JAVA_USER_CLASSES, true);
+			logMessage(JAVA_USER_CLASSES + " (current) = " + userClasses);
+			String NotesIniLine = "." + File.separator + filePath;
+
+			String platform = m_session.getPlatform();
+			String notesIniSep = platform.contains("Windows") ? ";" : ":";
+
+			if (userClasses.isEmpty()) {
+				userClasses = NotesIniLine;
+				logMessage(filePath + " - registered as the only one addin");
+			}
+			else if (userClasses.indexOf(filePath) == -1) {
+				userClasses = userClasses + notesIniSep + NotesIniLine;
+				logMessage(filePath + " - registered!");
+			}
+			else {
+				logMessage(filePath + " - already registered");
+			}
+
+			m_session.setEnvironmentVar(JAVA_USER_CLASSES, userClasses, true);
+			logMessage(JAVA_USER_CLASSES + " (new) set to " + userClasses);
+		} catch (NotesException e) {
+			logMessage("Install command failed: " + e.getMessage());
 		}
 	}
 
@@ -178,9 +255,9 @@ public class Genesis extends JavaServerAddin {
 		AddInLogMessageText("   quit             Unload Genesis");
 		AddInLogMessageText("   help             Show help information (or -h)");
 		AddInLogMessageText("   info             Show version and more of Genesis");
-		AddInLogMessageText("   check            Check connection with Domino App Catalog");
+		AddInLogMessageText("   check            Check connection with Catalog");
 		AddInLogMessageText("   list             List of available Java addin in the Catalog");
-		AddInLogMessageText("   install <name>   Install Java addin from the storage");
+		AddInLogMessageText("   install <name>   Install Java addin from the Catalog");
 		AddInLogMessageText("Copyright (C) Prominic.NET, Inc. 2021" + (year > 2021 ? " - " + Integer.toString(year) : ""));
 		AddInLogMessageText("See https://prominic.net for more details.");
 	}
