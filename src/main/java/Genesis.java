@@ -1,6 +1,8 @@
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Calendar;
 
@@ -9,14 +11,13 @@ import lotus.domino.NotesFactory;
 import lotus.domino.Session;
 import lotus.notes.addins.JavaServerAddin;
 import lotus.notes.internal.MessageQueue;
-
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddin {
 	// Constants
 	private final String		JADDIN_NAME				= "Genesis";
-	private final String		JADDIN_VERSION			= "0.2.0";
-	private final String		JADDIN_DATE				= "2022-02-09 13:30 (list, intall, register)";
+	private final String		JADDIN_VERSION			= "0.3.0";
+	private final String		JADDIN_DATE				= "2022-02-23 15:30 (file)";
 
 	private final String 		JAVA_USER_CLASSES 		= "JAVAUSERCLASSES";
 
@@ -156,8 +157,31 @@ public class Genesis extends JavaServerAddin {
 		else if(cmd.startsWith("-i") || cmd.startsWith("install")) {
 			install(cmd);
 		}
+		else if(cmd.startsWith("dbsigner")) {
+			dbsigner(cmd);
+		}
 		else {
 			logMessage("Command is not recognized (use -h or help to get details)");
+		}
+	}
+
+	private void dbsigner(String cmd) {
+		String[] optArr = cmd.split("\\s+");
+		if (optArr.length != 2) {
+			logMessage("there must be 2 parameters");
+			return;
+		}
+
+		PrintWriter writer;
+		try {
+			writer = new PrintWriter("dbsigner.txt", "UTF-8");
+			logMessage("wrote a command: " + optArr[1]);
+			writer.println(optArr[1]);
+			writer.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
 		}
 	}
 
