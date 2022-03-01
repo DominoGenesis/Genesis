@@ -16,8 +16,8 @@ import net.prominic.utils.HTTP;
 public class Genesis extends JavaServerAddin {
 	// Constants
 	private final String		JADDIN_NAME				= "Genesis";
-	private final String		JADDIN_VERSION			= "0.3.1";
-	private final String		JADDIN_DATE				= "2022-02-23 15:30 (file)";
+	private final String		JADDIN_VERSION			= "0.3.2";
+	private final String		JADDIN_DATE				= "2022-02-23 15:30 (common file command)";
 
 	private final String 		JAVA_USER_CLASSES 		= "JAVAUSERCLASSES";
 
@@ -157,24 +157,26 @@ public class Genesis extends JavaServerAddin {
 			install(cmd);
 		}
 		else if(cmd.toLowerCase().startsWith("dbsigner")) {
-			dbsigner(cmd);
+			fileCmd("dbsigner.txt", cmd);
+		}
+		else if(cmd.toLowerCase().startsWith("javaaddindemo")) {
+			fileCmd("javaaddindemo.txt", cmd);
 		}
 		else {
 			logMessage("Command is not recognized (use -h or help to get details)");
 		}
 	}
 
-	private void dbsigner(String cmd) {
+	private void fileCmd(String file, String cmd) {
 		String[] optArr = cmd.split("\\s+");
-		if (optArr.length != 2) {
-			logMessage("there must be 2 parameters");
+		if (optArr.length < 2) {
+			logMessage("there must be at least 2 parameters");
 			return;
 		}
 
-		PrintWriter writer;
 		try {
-			writer = new PrintWriter("dbsigner.txt", "UTF-8");
-			logMessage("wrote a command: " + optArr[1]);
+			PrintWriter writer = new PrintWriter(file, "UTF-8");
+			logMessage("genesis sent a command: " + optArr[1]);
 			writer.println(optArr[1]);
 			writer.close();
 		} catch (FileNotFoundException e) {
