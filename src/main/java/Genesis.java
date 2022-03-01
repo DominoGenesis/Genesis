@@ -16,7 +16,7 @@ import net.prominic.utils.HTTP;
 public class Genesis extends JavaServerAddin {
 	// Constants
 	private final String		JADDIN_NAME				= "Genesis";
-	private final String		JADDIN_VERSION			= "0.3.0";
+	private final String		JADDIN_VERSION			= "0.3.1";
 	private final String		JADDIN_DATE				= "2022-02-23 15:30 (file)";
 
 	private final String 		JAVA_USER_CLASSES 		= "JAVAUSERCLASSES";
@@ -26,7 +26,6 @@ public class Genesis extends JavaServerAddin {
 	// MSG_Q_PREFIX is defined in JavaServerAddin.class
 	private static final int 	MQ_MAX_MSGSIZE 			= 1024;
 	private final String 		qName 					= MSG_Q_PREFIX + JADDIN_NAME.toUpperCase();
-
 
 	MessageQueue 				mq						= null;
 	Session 					m_session				= null;
@@ -157,7 +156,7 @@ public class Genesis extends JavaServerAddin {
 		else if(cmd.startsWith("-i") || cmd.startsWith("install")) {
 			install(cmd);
 		}
-		else if(cmd.startsWith("dbsigner")) {
+		else if(cmd.toLowerCase().startsWith("dbsigner")) {
 			dbsigner(cmd);
 		}
 		else {
