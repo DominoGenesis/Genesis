@@ -1,8 +1,5 @@
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Calendar;
 
@@ -26,7 +23,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-03-07 20:30";
+		return "2022-03-07 20:31";
 	}
 
 	@Override
@@ -40,7 +37,7 @@ public class Genesis extends JavaServerAddinGenesis {
 		else {
 			catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 		}
-		
+
 		// check if connection could be established
 		if (!check()) {
 			logMessage("connection (*FAILED*) with: " + catalog);
@@ -76,43 +73,31 @@ public class Genesis extends JavaServerAddinGenesis {
 		else if ("-l".equals(cmd) || "list".equals(cmd)) {
 			showList();
 		}
-		else if(cmd.startsWith("-i") || cmd.startsWith("install")) {
+		else if(cmd.startsWith("install")) {
 			install(cmd);
 		}
-		else if(cmd.toLowerCase().startsWith("dbsigner")) {
-			fileCmd("dbsigner.txt", cmd);
+		else if(cmd.startsWith("update")) {
+			update(cmd);
 		}
-		else if(cmd.toLowerCase().startsWith("javaaddindemo")) {
-			fileCmd("javaaddindemo.txt", cmd);
+		else if(cmd.startsWith("delete")) {
+			delete(cmd);
 		}
 		else {
 			logMessage("Command is not recognized (use -h or help to get details)");
 			return false;
 		}
-		
+
 		return true;
 	}
 
-	private void fileCmd(String file, String cmd) {
-		String[] optArr = cmd.split("\\s+");
-		if (optArr.length < 2) {
-			logMessage("there must be at least 2 parameters");
-			return;
-		}
+	private void delete(String cmd) {
 
-		try {
-			PrintWriter writer = new PrintWriter(file, "UTF-8");
-			logMessage("genesis sent a command: " + optArr[1]);
-			writer.println(optArr[1]);
-			writer.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
 	}
 
-	// TODO: work in progress
+	private void update(String cmd) {
+
+	}
+
 	private void install(String cmd) {
 		try {
 			String[] optArr = cmd.split("\\s+");
@@ -135,12 +120,33 @@ public class Genesis extends JavaServerAddinGenesis {
 			String version = latestArr[0];
 			String url = catalog + "/" + latestArr[1];
 			String fileName = latestArr[1].substring(latestArr[1].lastIndexOf("/") + 1);
-			String filePath = "javaaddin" + File.separator + fileName;
+
+			// addin filename
+			fileName = fileName.replaceAll("\\.", "-");
+			logMessage("fileName: " + fileName);
+
+			// addin folder
+			String addinFolderPath = this.getAddinParentFolder() + File.separator + name;
+			logMessage("addinFolderPath: " + addinFolderPath);
+			File dir = new File(addinFolderPath);
+			if (!dir.exists()) {
+				dir.mkdirs();
+				logMessage("addinFolderPath: " + addinFolderPath + " -- created !!");
+			}
+
+			String addinFilePath = addinFolderPath + File.separator + fileName;
+			logMessage("addinFilePath: " + addinFilePath);
+			File file = new File(addinFilePath);
+			if (file.exists() && file.isFile()) {
+				logMessage(addinFilePath + " --- file already eixsts");
+				return;
+			}
+
 			logMessage("detected version: " + version);
 			logMessage("url: " + url);
 			logMessage("filename: " + fileName);
-			logMessage("will be downloaded to: " + filePath);
-			boolean downloaded = HTTP.saveURLTo(url, filePath);
+			logMessage("will be downloaded to: " + addinFilePath);
+			boolean downloaded = HTTP.saveURLTo(url, addinFilePath);
 			if (!downloaded) {
 				logMessage("> filed (not downloaded)");
 				return;
@@ -148,17 +154,28 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			logMessage("> ok (downloaded)");
 
-			registerAddin(filePath);
+			registerAddin(addinFilePath, name);
 
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
 	}
+	
+	private String join(String[] arr, String sep) {
+		String res = "";		
+		if (arr != null && arr.length > 0) {
+			for(int i = 0; i < arr.length; i++) {
+				if (i > 0) {
+					res += " ";
+				}
+				res += arr[i];
+			}
+		}
+		return res;
+	}
 
-	private void registerAddin(String filePath) {
+	private void registerAddin(String filePath, String addinName) {
 		try {
-			// 4. register new JAR in notes.ini
-			// Example: JAVAUSERCLASSESEXT=.\DominoMeterAddin\DominoMeter-5.jar
 			String userClasses = m_session.getEnvironmentString(JAVA_USER_CLASSES, true);
 			logMessage(JAVA_USER_CLASSES + " (current) = " + userClasses);
 			String NotesIniLine = "." + File.separator + filePath;
@@ -168,14 +185,21 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			if (userClasses.isEmpty()) {
 				userClasses = NotesIniLine;
-				logMessage(filePath + " - registered as the only one addin");
-			}
-			else if (userClasses.indexOf(filePath) == -1) {
-				userClasses = userClasses + notesIniSep + NotesIniLine;
-				logMessage(filePath + " - registered!");
 			}
 			else {
-				logMessage(filePath + " - already registered");
+				if (userClasses.indexOf(addinName) > 0) {
+					String[] userClassesArr = userClasses.split("\\" + notesIniSep);
+					for (int i = 0; i < userClassesArr.length; i++) {
+						if (userClassesArr[i].contains(addinName)) {
+							userClassesArr[i] = NotesIniLine;
+							userClasses = join(userClassesArr, notesIniSep);
+							i = userClassesArr.length;
+						}
+					}
+				}
+				else {
+					userClasses = userClasses + notesIniSep + NotesIniLine;
+				}
 			}
 
 			m_session.setEnvironmentVar(JAVA_USER_CLASSES, userClasses, true);

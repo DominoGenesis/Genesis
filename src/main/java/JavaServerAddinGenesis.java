@@ -23,7 +23,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 	protected MessageQueue 		mq						= null;
 	protected Session 			m_session				= null;
 	protected Database			m_ab					= null;
-	protected String			m_javaAddinRootFolder	= null;
+	private   String			m_javaAddinParentFolder	= null;
 	protected String			m_javaAddinCommand		= null;
 	protected String[] 			args 					= null;
 	private int 				dominoTaskID			= 0;
@@ -62,9 +62,8 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 			m_ab = m_session.getDatabase(m_session.getServerName(), "names.nsf");
 
 			String javaAddinFolder = new File(this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();
-			m_javaAddinRootFolder = javaAddinFolder.substring(0, javaAddinFolder.indexOf("javaaddin") + "javaaddin".length());
+			m_javaAddinParentFolder = javaAddinFolder.substring(0, javaAddinFolder.indexOf("javaaddin") + "javaaddin".length());
 			m_javaAddinCommand = javaAddinFolder + File.separator + COMMAND_FILE_NAME;
-			logMessage(m_javaAddinCommand);
 			
 			ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args);
 			pc.setState(m_ab, ProgramConfig.LOAD);		// set program documents in LOAD state
@@ -78,10 +77,10 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 	}
 	
 	protected void runNotesBeforeInitialize() {}
-
+	
 	// scan JavaAddin folder for sub-folders and adjust command.txt file with reload command
 	public void restart() {
-		File file = new File(m_javaAddinRootFolder);
+		File file = new File(m_javaAddinParentFolder);
 		String[] directories = file.list(new FilenameFilter() {
 		  @Override
 		  public boolean accept(File current, String name) {
@@ -90,7 +89,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		});
 		
 		for(int i=0; i<directories.length; i++) {
-			File f = new File(m_javaAddinRootFolder + File.separator + directories[i] + File.separator + COMMAND_FILE_NAME);
+			File f = new File(m_javaAddinParentFolder + File.separator + directories[i] + File.separator + COMMAND_FILE_NAME);
 			sendCommand(f, "reload");
 		}
 	}
@@ -111,6 +110,10 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
+	}
+
+	protected String getAddinParentFolder() {
+		return m_javaAddinParentFolder;
 	}
 	
 	protected void listen() {
@@ -154,7 +157,6 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 
 				// execute commands from file
 				File file = new File(m_javaAddinCommand);
-				logMessage(String.valueOf(file.exists()));
 				if (file.exists()) {
 					BufferedReader br = new BufferedReader(new FileReader(file));
 					String line;
