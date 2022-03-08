@@ -23,11 +23,11 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 	protected MessageQueue 		mq						= null;
 	protected Session 			m_session				= null;
 	protected Database			m_ab					= null;
-	private   String			m_javaAddinParentFolder	= null;
 	protected String			m_javaAddinCommand		= null;
 	protected String[] 			args 					= null;
 	private int 				dominoTaskID			= 0;
 	
+	protected static final String JAVA_ADDIN_FOLDER		= "javaaddin";
 	private static final String COMMAND_FILE_NAME		= "command.txt";
 
 	// constructor if parameters are provided
@@ -61,9 +61,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 			m_session = NotesFactory.createSession();
 			m_ab = m_session.getDatabase(m_session.getServerName(), "names.nsf");
 
-			String javaAddinFolder = new File(this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();
-			m_javaAddinParentFolder = javaAddinFolder.substring(0, javaAddinFolder.indexOf("javaaddin") + "javaaddin".length());
-			m_javaAddinCommand = javaAddinFolder + File.separator + COMMAND_FILE_NAME;
+			m_javaAddinCommand = JAVA_ADDIN_FOLDER + File.separator + this.getClass().getName() + File.separator + COMMAND_FILE_NAME;
 			
 			ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args);
 			pc.setState(m_ab, ProgramConfig.LOAD);		// set program documents in LOAD state
@@ -80,7 +78,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 	
 	// scan JavaAddin folder for sub-folders and adjust command.txt file with reload command
 	public void restart() {
-		File file = new File(m_javaAddinParentFolder);
+		File file = new File(JAVA_ADDIN_FOLDER);
 		String[] directories = file.list(new FilenameFilter() {
 		  @Override
 		  public boolean accept(File current, String name) {
@@ -89,7 +87,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		});
 		
 		for(int i=0; i<directories.length; i++) {
-			File f = new File(m_javaAddinParentFolder + File.separator + directories[i] + File.separator + COMMAND_FILE_NAME);
+			File f = new File(JAVA_ADDIN_FOLDER + File.separator + directories[i] + File.separator + COMMAND_FILE_NAME);
 			sendCommand(f, "reload");
 		}
 	}
@@ -112,10 +110,6 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		}
 	}
 
-	protected String getAddinParentFolder() {
-		return m_javaAddinParentFolder;
-	}
-	
 	protected void listen() {
 		StringBuffer qBuffer = new StringBuffer(MQ_MAX_MSGSIZE);
 

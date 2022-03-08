@@ -18,12 +18,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.4.0";
+		return "0.4.1";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-03-07 20:31";
+		return "2022-03-08 20:31";
 	}
 
 	@Override
@@ -74,10 +74,10 @@ public class Genesis extends JavaServerAddinGenesis {
 			showList();
 		}
 		else if(cmd.startsWith("install")) {
-			install(cmd);
+			install(cmd, true);
 		}
 		else if(cmd.startsWith("update")) {
-			update(cmd);
+			install(cmd, false);
 		}
 		else if(cmd.startsWith("delete")) {
 			delete(cmd);
@@ -94,15 +94,11 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	}
 
-	private void update(String cmd) {
-
-	}
-
-	private void install(String cmd) {
+	private void install(String cmd, boolean install) {
 		try {
 			String[] optArr = cmd.split("\\s+");
 			if (optArr.length != 2) {
-				logMessage("Install command should have only 1 parameter (addin name)");
+				logMessage("Install/Update command should have only 1 parameter (addin name)");
 				return;
 			}
 
@@ -120,29 +116,42 @@ public class Genesis extends JavaServerAddinGenesis {
 			String version = latestArr[0];
 			String url = catalog + "/" + latestArr[1];
 			String fileName = latestArr[1].substring(latestArr[1].lastIndexOf("/") + 1);
+			String fileNameVersion = version.replace(".", "-");
+			fileName = fileName.replace(".", "-" + fileNameVersion + ".");
 
 			// addin filename
-			fileName = fileName.replaceAll("\\.", "-");
 			logMessage("fileName: " + fileName);
 
 			// addin folder
-			String addinFolderPath = this.getAddinParentFolder() + File.separator + name;
-			logMessage("addinFolderPath: " + addinFolderPath);
+			String addinFolderPath = JAVA_ADDIN_FOLDER + File.separator + name;
 			File dir = new File(addinFolderPath);
+			if (install && dir.exists()) {
+				logMessage("addinFolderPath: " + addinFolderPath + " --- already exists, addin was already installed. break.");
+				return;
+			}
+			if (!install && !dir.exists()) {
+				logMessage("addinFolderPath: " + addinFolderPath + " --- does not exist, install addin first. break.");
+				return;
+			}
+			
 			if (!dir.exists()) {
 				dir.mkdirs();
-				logMessage("addinFolderPath: " + addinFolderPath + " -- created !!");
+				logMessage("addinFolderPath: " + addinFolderPath + " --- created");
+			}
+			else {
+				logMessage("addinFolderPath: " + addinFolderPath + " --- found");
 			}
 
 			String addinFilePath = addinFolderPath + File.separator + fileName;
-			logMessage("addinFilePath: " + addinFilePath);
 			File file = new File(addinFilePath);
 			if (file.exists() && file.isFile()) {
-				logMessage(addinFilePath + " --- file already eixsts");
+				logMessage(addinFilePath + " --- latest version already install. break.");
 				return;
 			}
+			else {
+				logMessage(addinFilePath + " --- new version. installing...");
+			}
 
-			logMessage("detected version: " + version);
 			logMessage("url: " + url);
 			logMessage("filename: " + fileName);
 			logMessage("will be downloaded to: " + addinFilePath);
@@ -155,7 +164,8 @@ public class Genesis extends JavaServerAddinGenesis {
 			logMessage("> ok (downloaded)");
 
 			registerAddin(addinFilePath, name);
-
+			
+			restart();
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
@@ -166,7 +176,7 @@ public class Genesis extends JavaServerAddinGenesis {
 		if (arr != null && arr.length > 0) {
 			for(int i = 0; i < arr.length; i++) {
 				if (i > 0) {
-					res += " ";
+					res += sep;
 				}
 				res += arr[i];
 			}
