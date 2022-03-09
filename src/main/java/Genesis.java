@@ -7,7 +7,7 @@ import lotus.domino.NotesException;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
-	private final String 		JAVA_USER_CLASSES 		= "JAVAUSERCLASSES";
+	private final String 		JAVA_USER_CLASSES_EXT 	= "JavaUserClassesExt";
 
 	private String				catalog					= "";
 
@@ -18,12 +18,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.4.2";
+		return "0.5.0";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-03-08 20:31";
+		return "2022-03-09 15:30";
 	}
 
 	@Override
@@ -133,7 +133,7 @@ public class Genesis extends JavaServerAddinGenesis {
 				logMessage("addinFolderPath: " + addinFolderPath + " --- does not exist, install addin first. break.");
 				return;
 			}
-			
+
 			if (!dir.exists()) {
 				dir.mkdirs();
 				logMessage("addinFolderPath: " + addinFolderPath + " --- created");
@@ -164,56 +164,31 @@ public class Genesis extends JavaServerAddinGenesis {
 			logMessage("> ok (downloaded)");
 
 			registerAddin(addinFilePath, name);
-			
+
 			restart();
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
 	}
-	
-	private String join(String[] arr, String sep) {
-		String res = "";		
-		if (arr != null && arr.length > 0) {
-			for(int i = 0; i < arr.length; i++) {
-				if (i > 0) {
-					res += sep;
-				}
-				res += arr[i];
-			}
-		}
-		return res;
-	}
 
 	private void registerAddin(String filePath, String addinName) {
 		try {
-			String userClasses = m_session.getEnvironmentString(JAVA_USER_CLASSES, true);
-			logMessage(JAVA_USER_CLASSES + " (current) = " + userClasses);
-			String NotesIniLine = "." + File.separator + filePath;
+			logMessage("NOTES.INI - UPDATES");
+			String tagName = "JA_" + addinName;
 
-			String platform = m_session.getPlatform();
-			String notesIniSep = platform.contains("Windows") ? ";" : ":";
+			String userClasses = m_session.getEnvironmentString(JAVA_USER_CLASSES_EXT, true);
+			if (!userClasses.contains(tagName)) {
+				if (!userClasses.isEmpty()) {
+					userClasses += ",";
+				}
+				userClasses += tagName;
 
-			if (userClasses.isEmpty()) {
-				userClasses = NotesIniLine;
-			}
-			else {
-				if (userClasses.indexOf(addinName) > 0) {
-					String[] userClassesArr = userClasses.split("\\" + notesIniSep);
-					for (int i = 0; i < userClassesArr.length; i++) {
-						if (userClassesArr[i].contains(addinName)) {
-							userClassesArr[i] = NotesIniLine;
-							userClasses = join(userClassesArr, notesIniSep);
-							i = userClassesArr.length;
-						}
-					}
-				}
-				else {
-					userClasses = userClasses + notesIniSep + NotesIniLine;
-				}
+				m_session.setEnvironmentVar(JAVA_USER_CLASSES_EXT, userClasses, true);
+				logMessage(JAVA_USER_CLASSES_EXT + " = " + userClasses);
 			}
 
-			m_session.setEnvironmentVar(JAVA_USER_CLASSES, userClasses, true);
-			logMessage(JAVA_USER_CLASSES + " (new) set to " + userClasses);
+			m_session.setEnvironmentVar(tagName, filePath, true);
+			logMessage(tagName + " = " + filePath);
 		} catch (NotesException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
