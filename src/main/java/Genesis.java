@@ -127,6 +127,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			pc.delete(m_ab);
 			logMessage("program documents - deleted");
 
+			restart();
 		} catch (NotesException e) {
 			logMessage("Delete command failed: " + e.getMessage());
 		}
