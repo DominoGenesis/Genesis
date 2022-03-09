@@ -18,12 +18,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.5.0";
+		return "0.5.1";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-03-09 15:30";
+		return "2022-03-09 16:05";
 	}
 
 	@Override
@@ -91,7 +91,45 @@ public class Genesis extends JavaServerAddinGenesis {
 	}
 
 	private void delete(String cmd) {
+		try {
+			String[] optArr = cmd.split("\\s+");
+			if (optArr.length != 2) {
+				logMessage("Install/Update command should have only 1 parameter (addin name)");
+				return;
+			}
 
+			String addinName = optArr[1];
+			String tagName = "JA_" + addinName;
+
+			// addin tag list
+			String userClasses = m_session.getEnvironmentString(JAVA_USER_CLASSES_EXT, true);
+			if (!userClasses.contains(tagName)) {
+				logMessage("Such javaaddin is not registerd, quit");
+				return;
+			}
+
+			if (userClasses.contains("," + tagName)) {
+				userClasses = userClasses.replace("," + tagName, "");
+			}
+			else {
+				userClasses = userClasses.replace(tagName, "");
+			}
+			m_session.setEnvironmentVar(JAVA_USER_CLASSES_EXT, userClasses, true);	
+
+			// tag name
+			String tagValue = m_session.getEnvironmentString(tagName, true);
+			if (!tagValue.isEmpty()) {
+				m_session.setEnvironmentVar(tagName, "", true);	
+			}
+			logMessage(tagName + " -- notes.ini cleaned");
+			
+			ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args);
+			pc.delete(m_ab);
+			logMessage("program documents - deleted");
+
+		} catch (NotesException e) {
+			logMessage("Delete command failed: " + e.getMessage());
+		}
 	}
 
 	private void install(String cmd, boolean install) {

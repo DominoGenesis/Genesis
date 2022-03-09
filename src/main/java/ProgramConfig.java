@@ -96,6 +96,38 @@ public class ProgramConfig {
 		return false;
 	}
 
+	/*
+	 * Delete related program documents
+	 */
+	public boolean delete(Database database) {
+		try {
+			String server = database.getServer();
+			View view = database.getView("($Programs)");
+			DocumentCollection col = view.getAllDocumentsByKey(server, true);
+
+			Document doc = col.getFirstDocument();
+			while (doc != null) {
+				Document nextDoc = col.getNextDocument(doc);
+
+				if (isAddinDoc(doc)) {
+					doc.remove(true);
+					log("program document deleted");
+				}
+
+				doc = nextDoc;
+			}
+
+			col.recycle();
+			view.recycle();
+
+			return true;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+	
 	private void deleteDuplicate(Document doc) throws NotesException {
 		doc.remove(true);
 		log("program document deleted (duplicate)");
