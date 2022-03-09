@@ -197,7 +197,7 @@ public class ProgramConfig {
 	}
 
 	private void log(String msg) {
-		System.out.println("[ProgramConfig] " + msg);
+		System.out.println(m_addinName + " " + msg);
 	}
 
 }

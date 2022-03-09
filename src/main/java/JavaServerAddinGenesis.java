@@ -26,7 +26,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 	protected String			m_javaAddinCommand		= null;
 	protected String[] 			args 					= null;
 	private int 				dominoTaskID			= 0;
-	
+
 	protected static final String JAVA_ADDIN_FOLDER		= "javaaddin";
 	private static final String COMMAND_FILE_NAME		= "command.txt";
 
@@ -36,7 +36,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 	}
 
 	public JavaServerAddinGenesis() {}
-	
+
 	protected abstract String getJavaAddinName();
 	protected abstract String getJavaAddinVersion();
 	protected abstract String getJavaAddinDate();
@@ -45,7 +45,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 	protected String getQName() {
 		return MSG_Q_PREFIX + getJavaAddinName().toUpperCase();
 	}
-	
+
 	/* the runNotes method, which is the main loop of the Addin */
 	@Override
 	public void runNotes () {
@@ -57,47 +57,52 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 
 		try {
 			runNotesBeforeInitialize();
-			
+
 			m_session = NotesFactory.createSession();
 			m_ab = m_session.getDatabase(m_session.getServerName(), "names.nsf");
 
 			m_javaAddinCommand = JAVA_ADDIN_FOLDER + File.separator + this.getClass().getName() + File.separator + COMMAND_FILE_NAME;
-			
+
+			File file = new File(m_javaAddinCommand);
+			if (file.exists()) {
+				file.delete();
+			}
+
 			ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args);
 			pc.setState(m_ab, ProgramConfig.LOAD);		// set program documents in LOAD state
-			
+
 			showInfo();
-			
+
 			listen();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	protected void runNotesBeforeInitialize() {}
-	
+
 	// scan JavaAddin folder for sub-folders and adjust command.txt file with reload command
 	public void restart() {
 		File file = new File(JAVA_ADDIN_FOLDER);
 		String[] directories = file.list(new FilenameFilter() {
-		  @Override
-		  public boolean accept(File current, String name) {
-		    return new File(current, name).isDirectory();
-		  }
+			@Override
+			public boolean accept(File current, String name) {
+				return new File(current, name).isDirectory();
+			}
 		});
-		
+
 		for(int i=0; i<directories.length; i++) {
 			File f = new File(JAVA_ADDIN_FOLDER + File.separator + directories[i] + File.separator + COMMAND_FILE_NAME);
 			sendCommand(f, "reload");
 		}
 	}
-	
+
 	public void reload() {
 		ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args);
 		pc.setState(m_ab, ProgramConfig.UNLOAD);		// set program documents in UNLOAD state
 		this.stopAddin();
 	}
-	
+
 	private void sendCommand(File file, String cmd) {
 		try {
 			PrintWriter writer = new PrintWriter(file, "UTF-8");
@@ -156,12 +161,12 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 					String line;
 					while((line = br.readLine()) != null) {
 						System.out.println(line);
-						
+
 						if (!line.isEmpty()) {
 							resolveMessageQueueState(line);
 						}
 					}
-					
+
 					br.close();
 					file.delete();
 				}
@@ -170,10 +175,10 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 			e.printStackTrace();
 		}
 	}
-	
+
 	protected boolean resolveMessageQueueState(String cmd) {
 		boolean flag = false;
-		
+
 		if ("-h".equals(cmd) || "help".equals(cmd)) {
 			showHelp();
 			flag = true;
@@ -194,7 +199,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 			restart();
 			flag = true;
 		}
-		
+
 		return flag;
 	}
 
@@ -203,11 +208,11 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		logMessage("date         " + this.getJavaAddinDate());
 		logMessage("parameters   " + Arrays.toString(this.args));
 	}
-	
+
 	protected void quit() {
 		this.stopAddin();
 	}
-	
+
 	/**
 	 * Write a log message to the Domino console. The message string will be prefixed with the add-in name
 	 * followed by a column, e.g. <code>"AddinName: xxxxxxxx"</code>

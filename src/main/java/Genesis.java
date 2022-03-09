@@ -18,7 +18,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.4.1";
+		return "0.4.2";
 	}
 
 	@Override
