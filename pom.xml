@@ -5,7 +5,7 @@
 	<groupId>net.prominic.Genesis</groupId>
 	<artifactId>Genesis</artifactId>
 	<packaging>jar</packaging>
-	<version>0.5.1</version>
+	<version>0-5-2</version>
 	<name>Genesis</name>
 	<url>http://maven.apache.org</url>
 

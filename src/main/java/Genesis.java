@@ -8,7 +8,6 @@ import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
 	private final String 		JAVA_USER_CLASSES_EXT 	= "JavaUserClassesExt";
-
 	private String				catalog					= "";
 
 	@Override
@@ -18,12 +17,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.5.1";
+		return "0.5.2";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-03-09 16:05";
+		return "2022-03-12 18:05";
 	}
 
 	@Override
@@ -70,8 +69,11 @@ public class Genesis extends JavaServerAddinGenesis {
 				logMessage("*FAILED* to connect with: " + catalog);
 			}
 		}
-		else if ("-l".equals(cmd) || "list".equals(cmd)) {
+		else if ("list".equals(cmd)) {
 			showList();
+		}
+		else if ("state".equals(cmd)) {
+			showState();
 		}
 		else if(cmd.startsWith("install")) {
 			install(cmd, true);
@@ -90,6 +92,17 @@ public class Genesis extends JavaServerAddinGenesis {
 		return true;
 	}
 
+	private void showState() {
+		String[] addinName = this.getAllAddin();
+
+		for(int i=0; i<addinName.length; i++) {
+			String javaAddin = JAVA_ADDIN_ROOT + File.separator + addinName[i];
+
+			boolean status = isLive(javaAddin);
+			this.logMessage(addinName[i] + " : " + String.valueOf(status));
+		}
+	}
+
 	private void delete(String cmd) {
 		try {
 			String[] optArr = cmd.split("\\s+");
@@ -99,7 +112,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			}
 
 			String addinName = optArr[1];
-			String tagName = "JA_" + addinName;
+			String tagName = "GJA_" + addinName;
 
 			// addin tag list
 			String userClasses = m_session.getEnvironmentString(JAVA_USER_CLASSES_EXT, true);
@@ -162,7 +175,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			logMessage("fileName: " + fileName);
 
 			// addin folder
-			String addinFolderPath = JAVA_ADDIN_FOLDER + File.separator + name;
+			String addinFolderPath = JAVA_ADDIN_ROOT + File.separator + name;
 			File dir = new File(addinFolderPath);
 			if (install && dir.exists()) {
 				logMessage("addinFolderPath: " + addinFolderPath + " --- already exists, addin was already installed. break.");
@@ -257,14 +270,17 @@ public class Genesis extends JavaServerAddinGenesis {
 		AddInLogMessageText("   info             Show version and more of Genesis");
 		AddInLogMessageText("   check            Check connection with Catalog");
 		AddInLogMessageText("   list             List of available Java addin in the Catalog");
+		AddInLogMessageText("   state            Show all installed addin (active and non active)");
 		AddInLogMessageText("   install <name>   Install Java addin from the Catalog");
+		AddInLogMessageText("   update <name>    Update Java addin from the Catalog");
+		AddInLogMessageText("   delete <name>    Delete Java addin from the Catalog");
 		AddInLogMessageText("Copyright (C) Prominic.NET, Inc. 2021" + (year > 2021 ? " - " + Integer.toString(year) : ""));
 		AddInLogMessageText("See https://prominic.net for more details.");
 	}
 
 	@Override
 	protected void showInfo() {
-		logMessage("version      " + this.getJavaAddinName());
+		logMessage("version      " + this.getJavaAddinVersion());
 		logMessage("date         " + this.getJavaAddinDate());
 		logMessage("catalog      " + this.catalog);
 		logMessage("parameters   " + Arrays.toString(this.args));

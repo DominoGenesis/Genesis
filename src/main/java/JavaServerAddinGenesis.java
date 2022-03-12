@@ -3,9 +3,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 
 import lotus.domino.Database;
 import lotus.domino.NotesException;
@@ -23,12 +26,16 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 	protected MessageQueue 		mq						= null;
 	protected Session 			m_session				= null;
 	protected Database			m_ab					= null;
+	protected String			m_javaAddinFolder		= null;
 	protected String			m_javaAddinCommand		= null;
+	protected String			m_javaAddinLive			= null;
 	protected String[] 			args 					= null;
 	private int 				dominoTaskID			= 0;
 
-	protected static final String JAVA_ADDIN_FOLDER		= "javaaddin";
+	protected static final String JAVA_ADDIN_ROOT		= "JavaAddin";
 	private static final String COMMAND_FILE_NAME		= "command.txt";
+	private static final String LIVE_FILE_NAME			= "live.txt";
+	private static final int 	LIVE_INTERVAL_MINUTES	= 1;
 
 	// constructor if parameters are provided
 	public JavaServerAddinGenesis(String[] args) {
@@ -60,9 +67,11 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 
 			m_session = NotesFactory.createSession();
 			m_ab = m_session.getDatabase(m_session.getServerName(), "names.nsf");
+			m_javaAddinFolder = JAVA_ADDIN_ROOT + File.separator + this.getClass().getName();
+			m_javaAddinCommand = m_javaAddinFolder + File.separator + COMMAND_FILE_NAME;
+			m_javaAddinLive = m_javaAddinFolder + File.separator + LIVE_FILE_NAME;
 
-			m_javaAddinCommand = JAVA_ADDIN_FOLDER + File.separator + this.getClass().getName() + File.separator + COMMAND_FILE_NAME;
-
+			// cleanup old command file if exists
 			File file = new File(m_javaAddinCommand);
 			if (file.exists()) {
 				file.delete();
@@ -81,9 +90,8 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 
 	protected void runNotesBeforeInitialize() {}
 
-	// scan JavaAddin folder for sub-folders and adjust command.txt file with reload command
-	public void restart() {
-		File file = new File(JAVA_ADDIN_FOLDER);
+	protected String[] getAllAddin() {
+		File file = new File(JAVA_ADDIN_ROOT);
 		String[] directories = file.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
@@ -91,10 +99,41 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 			}
 		});
 
+		return directories;
+	}
+
+	// scan JavaAddin folder for sub-folders and adjust command.txt file with reload command
+	public void restart() {
+		String[] directories = getAllAddin();
+
 		for(int i=0; i<directories.length; i++) {
-			File f = new File(JAVA_ADDIN_FOLDER + File.separator + directories[i] + File.separator + COMMAND_FILE_NAME);
-			sendCommand(f, "reload");
+			String javaAddin = JAVA_ADDIN_ROOT + File.separator + directories[i];
+
+			if (isLive(javaAddin)) {
+				File fileCommand = new File(javaAddin + File.separator + COMMAND_FILE_NAME);
+				writeFile(fileCommand, "reload");	
+			}
 		}
+	}
+
+	protected boolean isLive(String javaAddin) {
+		File f = new File(javaAddin + File.separator + LIVE_FILE_NAME);
+		if (!f.exists()) return false;
+
+		String sTimeStamp = readFile(f);
+		if (sTimeStamp.length() == 0) return false;
+		
+		// last live date
+		long timeStamp = Long.parseLong(sTimeStamp);
+		Date date1 = new Date(timeStamp);
+		Calendar c1 = Calendar.getInstance();
+		c1.setTime(date1);
+		c1.add(Calendar.HOUR, 1);
+		
+		// current date
+		Calendar c2 = Calendar.getInstance();
+
+		return c1.after(c2);
 	}
 
 	public void reload() {
@@ -103,7 +142,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		this.stopAddin();
 	}
 
-	private void sendCommand(File file, String cmd) {
+	private void writeFile(File file, String cmd) {
 		try {
 			PrintWriter writer = new PrintWriter(file, "UTF-8");
 			writer.println(cmd);
@@ -115,6 +154,23 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		}
 	}
 
+	private String readFile(File file) {
+		if (!file.exists()) return "";
+
+		StringBuilder contentBuilder = new StringBuilder();
+		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+			String sCurrentLine;
+			while ((sCurrentLine = br.readLine()) != null) {
+				contentBuilder.append(sCurrentLine);
+			}
+		} 
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		return contentBuilder.toString();
+	}
+
+	@SuppressWarnings("deprecation")
 	protected void listen() {
 		StringBuffer qBuffer = new StringBuffer(MQ_MAX_MSGSIZE);
 
@@ -135,11 +191,18 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 				logMessage("Unable to open Domino message queue");
 				return;
 			}
+			
+			updateLiveDateStamp();
 
 			setAddinState("Idle");
 			while (this.addInRunning() && (messageQueueState != MessageQueue.ERR_MQ_QUITTING)) {
 				/* gives control to other task in non preemptive os*/
 				OSPreemptOccasionally();
+
+				// every 10 mins we save status
+				if (this.AddInHasMinutesElapsed(LIVE_INTERVAL_MINUTES)) {
+					updateLiveDateStamp();
+				}
 
 				// check for command from console
 				messageQueueState = mq.get(qBuffer, MQ_MAX_MSGSIZE, MessageQueue.MQ_WAIT_FOR_MSG, 1000);
@@ -155,20 +218,10 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 				};
 
 				// execute commands from file
-				File file = new File(m_javaAddinCommand);
-				if (file.exists()) {
-					BufferedReader br = new BufferedReader(new FileReader(file));
-					String line;
-					while((line = br.readLine()) != null) {
-						System.out.println(line);
-
-						if (!line.isEmpty()) {
-							resolveMessageQueueState(line);
-						}
-					}
-
-					br.close();
-					file.delete();
+				String line = this.readFile(new File(m_javaAddinCommand));
+				if (!line.isEmpty()) {
+					System.out.println(line);
+					resolveMessageQueueState(line);
 				}
 			}
 		} catch(Exception e) {
@@ -176,35 +229,40 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		}
 	}
 
+	// file keeps getting updated while java addin works
+	private void updateLiveDateStamp() {
+		File f = new File(this.m_javaAddinLive);
+		long currentTime = System.currentTimeMillis();
+		writeFile(f, String.valueOf(currentTime));
+	}
+
 	protected boolean resolveMessageQueueState(String cmd) {
-		boolean flag = false;
+		boolean flag = true;
 
 		if ("-h".equals(cmd) || "help".equals(cmd)) {
 			showHelp();
-			flag = true;
 		}
 		else if ("info".equals(cmd)) {
 			showInfo();
-			flag = true;
 		}
 		else if ("quit".equals(cmd)) {
 			quit();
-			flag = true;
 		}
 		else if ("reload".equals(cmd)) {
 			reload();
-			flag = true;
 		}
 		else if ("restart".equals(cmd)) {
 			restart();
-			flag = true;
+		}
+		else {
+			flag = false;
 		}
 
 		return flag;
 	}
 
 	protected void showInfo() {
-		logMessage("version      " + this.getJavaAddinName());
+		logMessage("version      " + this.getJavaAddinVersion());
 		logMessage("date         " + this.getJavaAddinDate());
 		logMessage("parameters   " + Arrays.toString(this.args));
 	}
