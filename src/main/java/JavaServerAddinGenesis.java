@@ -32,8 +32,9 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 	protected String[] 			args 					= null;
 	private int 				dominoTaskID			= 0;
 
+	protected final String 		JAVA_USER_CLASSES_EXT 	= "JavaUserClassesExt";
 	protected static final String JAVA_ADDIN_ROOT		= "JavaAddin";
-	private static final String COMMAND_FILE_NAME		= "command.txt";
+	protected static final String COMMAND_FILE_NAME		= "command.txt";
 	private static final String LIVE_FILE_NAME			= "live.txt";
 	private static final int 	LIVE_INTERVAL_MINUTES	= 1;
 
@@ -44,10 +45,14 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 
 	public JavaServerAddinGenesis() {}
 
-	protected abstract String getJavaAddinName();
 	protected abstract String getJavaAddinVersion();
 	protected abstract String getJavaAddinDate();
-	protected abstract void showHelp();
+	protected void showHelpExt() {}
+	protected void showInfoExt() {}
+
+	protected String getJavaAddinName() {
+		return this.getClass().getName();
+	}
 
 	protected String getQName() {
 		return MSG_Q_PREFIX + getJavaAddinName().toUpperCase();
@@ -102,18 +107,34 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		return directories;
 	}
 
-	// scan JavaAddin folder for sub-folders and adjust command.txt file with reload command
-	public void restart() {
+	/*
+	 * scan JavaAddin folder for sub-folders (addins) and update command.txt with a command
+	 */
+	private void sendCommandAll(String command, boolean incudeThisAddin) {
 		String[] directories = getAllAddin();
-
 		for(int i=0; i<directories.length; i++) {
-			String javaAddin = JAVA_ADDIN_ROOT + File.separator + directories[i];
-
-			if (isLive(javaAddin)) {
-				File fileCommand = new File(javaAddin + File.separator + COMMAND_FILE_NAME);
-				writeFile(fileCommand, "reload");	
+			if (incudeThisAddin || !directories[i].equalsIgnoreCase(getJavaAddinName())) {
+				String javaAddin = JAVA_ADDIN_ROOT + File.separator + directories[i];
+				if (isLive(javaAddin)) {
+					File fileCommand = new File(javaAddin + File.separator + COMMAND_FILE_NAME);
+					writeFile(fileCommand, command);	
+				}
 			}
-		}
+		}		
+	}
+	
+	private void sendCommand(String command) {
+		File fileCommand = new File(this.m_javaAddinCommand);
+		writeFile(fileCommand, command);	
+	}
+	
+	protected String readCommand() {
+		File fileCommand = new File(this.m_javaAddinCommand);
+		return this.readFile(fileCommand);
+	}
+	
+	public void restartAll(boolean includeThisAddin) {
+		sendCommandAll("reload", includeThisAddin);
 	}
 
 	protected boolean isLive(String javaAddin) {
@@ -122,14 +143,14 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 
 		String sTimeStamp = readFile(f);
 		if (sTimeStamp.length() == 0) return false;
-		
+
 		// last live date
 		long timeStamp = Long.parseLong(sTimeStamp);
 		Date date1 = new Date(timeStamp);
 		Calendar c1 = Calendar.getInstance();
 		c1.setTime(date1);
 		c1.add(Calendar.HOUR, 1);
-		
+
 		// current date
 		Calendar c2 = Calendar.getInstance();
 
@@ -154,7 +175,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		}
 	}
 
-	private String readFile(File file) {
+	protected String readFile(File file) {
 		if (!file.exists()) return "";
 
 		StringBuilder contentBuilder = new StringBuilder();
@@ -191,7 +212,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 				logMessage("Unable to open Domino message queue");
 				return;
 			}
-			
+
 			updateLiveDateStamp();
 
 			setAddinState("Idle");
@@ -218,7 +239,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 				};
 
 				// execute commands from file
-				String line = this.readFile(new File(m_javaAddinCommand));
+				String line = readCommand();
 				if (!line.isEmpty()) {
 					System.out.println(line);
 					resolveMessageQueueState(line);
@@ -228,7 +249,7 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 			e.printStackTrace();
 		}
 	}
-
+	
 	// file keeps getting updated while java addin works
 	private void updateLiveDateStamp() {
 		File f = new File(this.m_javaAddinLive);
@@ -242,17 +263,20 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		if ("-h".equals(cmd) || "help".equals(cmd)) {
 			showHelp();
 		}
+		else if ("quit".equals(cmd)) {
+			quit();
+		}
 		else if ("info".equals(cmd)) {
 			showInfo();
 		}
-		else if ("quit".equals(cmd)) {
-			quit();
+		else if ("uninstall".equals(cmd)) {
+			uninstall();
 		}
 		else if ("reload".equals(cmd)) {
 			reload();
 		}
 		else if ("restart".equals(cmd)) {
-			restart();
+			restartAll(true);
 		}
 		else {
 			flag = false;
@@ -261,10 +285,68 @@ abstract class JavaServerAddinGenesis extends JavaServerAddin {
 		return flag;
 	}
 
-	protected void showInfo() {
+	private void showHelp() {
+		logMessage("*** Usage ***");
+		AddInLogMessageText("load runjava " + this.getJavaAddinName());
+		AddInLogMessageText("tell " + this.getJavaAddinName() + " <command>");
+		AddInLogMessageText("   quit             Unload addin");
+		AddInLogMessageText("   help             Show help information (or -h)");
+		AddInLogMessageText("   info             Show version and more of Genesis");
+		AddInLogMessageText("   uninstall        Uninstall addin");
+
+		// in case if you need to extend help with other commands
+		showHelpExt();
+
+		// TODO: make it unique for each module
+		int year = Calendar.getInstance().get(Calendar.YEAR);
+		AddInLogMessageText("Copyright (C) Prominic.NET, Inc. 2021" + (year > 2021 ? " - " + Integer.toString(year) : ""));
+		AddInLogMessageText("See https://prominic.net for more details.");
+	}
+	private void showInfo() {
 		logMessage("version      " + this.getJavaAddinVersion());
 		logMessage("date         " + this.getJavaAddinDate());
 		logMessage("parameters   " + Arrays.toString(this.args));
+
+		// in case if you need to extend help with other commands
+		showInfoExt();
+	}
+
+	/*
+	 * Uninstall the add-in
+	 * - clean out notes.ini
+	 * - remove program documents
+	 * - stop/unload this addin
+	 */
+	private void uninstall() {
+		try {
+			String tagName = "GJA_" + this.getJavaAddinName();
+
+			// addin tag list
+			String userClasses = m_session.getEnvironmentString(JAVA_USER_CLASSES_EXT, true);
+			if (userClasses.contains(tagName)) {
+				String replaceTagName = userClasses.contains("," + tagName) ?  "," + tagName : tagName;
+				userClasses = userClasses.replace(replaceTagName, "");
+				m_session.setEnvironmentVar(JAVA_USER_CLASSES_EXT, userClasses, true);
+			}
+
+			// tag name
+			String tagValue = m_session.getEnvironmentString(tagName, true);
+			if (!tagValue.isEmpty()) {
+				m_session.setEnvironmentVar(tagName, "", true);	
+			}
+
+			ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args);
+			pc.delete(m_ab);
+
+			logMessage("uninstall - completed");
+
+			sendCommand("uninstall");
+			restartAll(false);
+
+			this.quit();
+		} catch (NotesException e) {
+			logMessage("Delete command failed: " + e.getMessage());
+		}
 	}
 
 	protected void quit() {
