@@ -2,20 +2,21 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import lotus.domino.NotesException;
-import net.prominic.utils.HTTP;
+import net.prominic.gja_v20220323.HTTP;
+import net.prominic.gja_v20220323.JSONRules;
+import net.prominic.gja_v20220323.JavaServerAddinGenesis;
 
 public class Genesis extends JavaServerAddinGenesis {
 	private String				catalog					= "";
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.5.3";
+		return "0.5.6";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-03-14 18:45";
+		return "2022-03-16 18:45";
 	}
 
 	@Override
@@ -97,6 +98,7 @@ public class Genesis extends JavaServerAddinGenesis {
 				if (cmd.equalsIgnoreCase("uninstall")) {
 					File dir = new File(javaAddin);
 					deleteDir(dir);
+					logMessage("deleted: " + javaAddin);
 				}
 			}
 		}
@@ -141,82 +143,13 @@ public class Genesis extends JavaServerAddinGenesis {
 			// find addin in catalog
 			String name = optArr[1];
 			StringBuffer buf = HTTP.get(catalog + "/app?openagent&name=" + name);
-			String[] bufArr = buf.toString().split("\\|");
-			if (bufArr[0].startsWith("error")) {
-				logMessage("Addin is not found, operation failed");
-				return;
-			}
 
-			// TODO: should be updated once we define JSON format for catalog
-			String latest = bufArr[0];
-			String[] latestArr = latest.split(";");
-			String version = latestArr[0];
-			String url = catalog + "/" + latestArr[1];
-			String fileName = latestArr[1].substring(latestArr[1].lastIndexOf("/") + 1);
-			String fileNameVersion = version.replace(".", "-");
-			fileName = fileName.replace(".", "-" + fileNameVersion + ".");
-
-			// addin filename
-			logMessage(fileName + " - latest version");
-
-			// addin folder
-			String addinFolderPath = JAVA_ADDIN_ROOT + File.separator + name;
-			File dir = new File(addinFolderPath);
-
-			if (!dir.exists()) {
-				dir.mkdirs();
-				logMessage(addinFolderPath + " --- created");
-			}
-			else {
-				logMessage(addinFolderPath + " --- already exists. skip.");
-			}
-
-			String addinFilePath = addinFolderPath + File.separator + fileName;
-			File file = new File(addinFilePath);
-			if (file.exists() && file.isFile()) {
-				logMessage(addinFilePath + " --- already downloaded.");
-			}
-			else {
-				logMessage("latest version: " + url);
-				logMessage(addinFilePath + " --- downloading...");
-				boolean downloaded = HTTP.saveURLTo(url, addinFilePath);
-				if (downloaded) {
-					logMessage("> OK");
-					logMessage("> " + addinFilePath);
-				}
-				else {
-					logMessage("> FAILED (installation failed)");
-					return;
-				}
-			}
-
-			registerAddin(name, addinFilePath);
+			JSONRules rules = new JSONRules(m_session);
+			rules.execute(buf.toString());
 
 			restartAll(true);
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
-		}
-	}
-
-	/*
-	 * Register addin in notes.ini (updates notes.ini)
-	 */
-	private void registerAddin(String addinName, String filePath) {
-		try {
-			String variableName = "GJA_" + addinName;
-			String userClasses = m_session.getEnvironmentString(JAVA_USER_CLASSES_EXT, true);
-			if (!userClasses.contains(variableName)) {
-				if (!userClasses.isEmpty()) {
-					userClasses += ",";
-				}
-				userClasses += variableName;
-				m_session.setEnvironmentVar(JAVA_USER_CLASSES_EXT, userClasses, true);
-			}
-
-			m_session.setEnvironmentVar(variableName, filePath, true);
-			logMessage(addinName + " - registered successfully");
-		} catch (NotesException e) {
-			logMessage("Registration of the addin failed: " + e.getMessage());
 		}
 	}
 
