@@ -53,7 +53,7 @@
 		<dependency>
 			<groupId>net.prominic</groupId>
 			<artifactId>gja</artifactId>
-			<version>2022-03-23</version>
+			<version>2022-03-25</version>
 		</dependency>
 
 		<dependency>

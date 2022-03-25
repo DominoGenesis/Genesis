@@ -2,16 +2,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import net.prominic.gja_v20220323.HTTP;
-import net.prominic.gja_v20220323.JSONRules;
-import net.prominic.gja_v20220323.JavaServerAddinGenesis;
+import net.prominic.gja_v20220325.HTTP;
+import net.prominic.gja_v20220325.JSONRules;
+import net.prominic.gja_v20220325.JavaServerAddinGenesis;
 
 public class Genesis extends JavaServerAddinGenesis {
-	private String				catalog					= "";
+	private String				m_catalog					= "";
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.5.6";
+		return "0.6.0";
 	}
 
 	@Override
@@ -22,18 +22,18 @@ public class Genesis extends JavaServerAddinGenesis {
 	@Override
 	protected void runNotesBeforeInitialize() {
 		if (args != null && args.length > 0) {
-			catalog = args[0];
-			if ("dev".equals(catalog)) {
-				catalog = "https://domino-1.dmytro.cloud/gc.nsf";
+			m_catalog = args[0];
+			if ("dev".equals(m_catalog)) {
+				m_catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 			}
 		}
 		else {
-			catalog = "https://domino-1.dmytro.cloud/gc.nsf";
+			m_catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 		}
 
 		// check if connection could be established
 		if (!check()) {
-			logMessage("connection (*FAILED*) with: " + catalog);
+			logMessage("connection (*FAILED*) with: " + m_catalog);
 		}
 	}
 
@@ -43,7 +43,7 @@ public class Genesis extends JavaServerAddinGenesis {
 	private boolean check() {
 		StringBuffer buf = new StringBuffer();
 		try {
-			String url = catalog.concat("/check?openagent");
+			String url = m_catalog.concat("/check?openagent");
 			buf = HTTP.get(url);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -57,10 +57,10 @@ public class Genesis extends JavaServerAddinGenesis {
 
 		if ("check".equals(cmd)) {
 			if (check()) {
-				logMessage("OK to connect with with: " + catalog);
+				logMessage("OK to connect with with: " + m_catalog);
 			}
 			else {
-				logMessage("*FAILED* to connect with: " + catalog);
+				logMessage("*FAILED* to connect with: " + m_catalog);
 			}
 		}
 		else if ("list".equals(cmd)) {
@@ -142,9 +142,9 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			// find addin in catalog
 			String name = optArr[1];
-			StringBuffer buf = HTTP.get(catalog + "/app?openagent&name=" + name);
+			StringBuffer buf = HTTP.get(m_catalog + "/app?openagent&name=" + name);
 
-			JSONRules rules = new JSONRules(m_session);
+			JSONRules rules = new JSONRules(m_session, m_catalog);
 			rules.execute(buf.toString());
 
 			restartAll(true);
@@ -158,7 +158,7 @@ public class Genesis extends JavaServerAddinGenesis {
 	 */
 	private void showList() {
 		try {
-			StringBuffer list = HTTP.get(catalog.concat("/list?openagent"));
+			StringBuffer list = HTTP.get(m_catalog.concat("/list?openagent"));
 			String[] listArr = list.toString().split("\\|");
 			logMessage("*** List of App registered in Genesis Catalog ***");
 			for(int i = 0; i < listArr.length; i++) {
@@ -184,7 +184,7 @@ public class Genesis extends JavaServerAddinGenesis {
 	 * Extend default Info
 	 */
 	protected void showInfoExt() {
-		logMessage("catalog      " + this.catalog);
+		logMessage("catalog      " + this.m_catalog);
 	}
 
 }
