@@ -2,21 +2,21 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import net.prominic.gja_v20220325.HTTP;
-import net.prominic.gja_v20220325.JSONRules;
-import net.prominic.gja_v20220325.JavaServerAddinGenesis;
+import net.prominic.gja_v20220330.HTTP;
+import net.prominic.gja_v20220330.JSONRules;
+import net.prominic.gja_v20220330.JavaServerAddinGenesis;
 
 public class Genesis extends JavaServerAddinGenesis {
 	private String				m_catalog					= "";
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.0";
+		return "0.6.2";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-03-16 18:45";
+		return "2022-03-30 18:45";
 	}
 
 	@Override
@@ -146,8 +146,6 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			JSONRules rules = new JSONRules(m_session, m_catalog);
 			rules.execute(buf.toString());
-
-			restartAll(true);
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
@@ -177,7 +175,6 @@ public class Genesis extends JavaServerAddinGenesis {
 		AddInLogMessageText("   list             List of available Java addin in the Catalog");
 		AddInLogMessageText("   state            Show all installed addin (active and non active)");
 		AddInLogMessageText("   install <name>   Install Java addin from the Catalog");
-		AddInLogMessageText("   update <name>    Update Java addin from the Catalog");
 	}
 
 	/*

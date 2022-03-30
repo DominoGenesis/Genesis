@@ -3,7 +3,7 @@
 	<groupId>net.prominic.Genesis</groupId>
 	<artifactId>Genesis</artifactId>
 	<packaging>jar</packaging>
-	<version>0-5-6</version>
+	<version>0-6-2</version>
 	<name>Genesis</name>
 	<url>http://maven.apache.org</url>
 
@@ -44,6 +44,13 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.glassfish.corba</groupId>
+			<artifactId>glassfish-corba-omgapi</artifactId>
+			<version>4.2.1</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>lotus.notes</groupId>
 			<artifactId>notes</artifactId>
 			<version>10.0</version>
@@ -53,20 +60,7 @@
 		<dependency>
 			<groupId>net.prominic</groupId>
 			<artifactId>gja</artifactId>
-			<version>2022-03-25</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.glassfish.corba</groupId>
-			<artifactId>glassfish-corba-omgapi</artifactId>
-			<version>4.2.1</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.googlecode.json-simple</groupId>
-			<artifactId>json-simple</artifactId>
-			<version>1.1</version>
+			<version>2022-03-30</version>
 		</dependency>
 	</dependencies>
 
