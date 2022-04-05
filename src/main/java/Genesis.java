@@ -2,21 +2,21 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import net.prominic.gja_v20220330.HTTP;
-import net.prominic.gja_v20220330.JSONRules;
-import net.prominic.gja_v20220330.JavaServerAddinGenesis;
+import net.prominic.gja_v20220405.HTTP;
+import net.prominic.gja_v20220405.JSONRules;
+import net.prominic.gja_v20220405.JavaServerAddinGenesis;
 
 public class Genesis extends JavaServerAddinGenesis {
 	private String				m_catalog					= "";
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.2";
+		return "0.6.3";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-03-30 18:45";
+		return "2022-04-05 18:45";
 	}
 
 	@Override
@@ -144,7 +144,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			String name = optArr[1];
 			StringBuffer buf = HTTP.get(m_catalog + "/app?openagent&name=" + name);
 
-			JSONRules rules = new JSONRules(m_session, m_catalog);
+			JSONRules rules = new JSONRules(m_session, m_catalog, this.getCoreVersion());
 			rules.execute(buf.toString());
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());

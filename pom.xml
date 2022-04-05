@@ -3,7 +3,7 @@
 	<groupId>net.prominic.Genesis</groupId>
 	<artifactId>Genesis</artifactId>
 	<packaging>jar</packaging>
-	<version>0-6-2</version>
+	<version>0-6-3</version>
 	<name>Genesis</name>
 	<url>http://maven.apache.org</url>
 
@@ -60,7 +60,7 @@
 		<dependency>
 			<groupId>net.prominic</groupId>
 			<artifactId>gja</artifactId>
-			<version>2022-03-30</version>
+			<version>2022-04-05</version>
 		</dependency>
 	</dependencies>
 
