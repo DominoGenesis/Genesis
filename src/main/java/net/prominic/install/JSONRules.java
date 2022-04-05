@@ -17,6 +17,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import lotus.domino.Session;
+import net.prominic.log.Logger;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 import lotus.domino.Database;
@@ -27,43 +28,50 @@ import lotus.domino.NotesException;
 public class JSONRules {
 	private Session m_session;
 	private String m_catalog;
+	private Logger m_logger;
+	private StringBuffer m_logBuffer;
 	
-	private final static String VERSION = "0.2.4";
+	public final static String VERSION = "0.2.4";
 	
-	public JSONRules(Session session, String catalog) {
+	public JSONRules(Session session, String catalog, Logger logger) {
 		m_session = session;
 		m_catalog = catalog;
+		m_logger = logger;
 	}
 
-	public void execute(String json) {
+	public boolean execute(String json) {
 		JSONParser parser = new JSONParser();
 		try {
 			JSONObject jsonObject = (JSONObject) parser.parse(json);
-			execute(jsonObject);
+			return execute(jsonObject);
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
+		return false;
 	}
 
-	public void execute(Reader reader) {
+	public boolean execute(Reader reader) {
 		JSONParser parser = new JSONParser();
 		try {
 			JSONObject jsonObject = (JSONObject) parser.parse(reader);
-			execute(jsonObject);
+			return execute(jsonObject);
 		} catch (IOException | ParseException e) {
 			e.printStackTrace();
 		}
+		return false;
 	}
 
 	/*
 	 * Exectute JSON
 	 */
-	public void execute(JSONObject obj) {
+	private boolean execute(JSONObject obj) {
+		m_logBuffer = new StringBuffer();
+		
 		// if error
 		if (obj.containsKey("error")) {
 			String error = (String) obj.get("error");	
 			log(error);
-			return;
+			return false;
 		}
 
 		@SuppressWarnings("unchecked")
@@ -72,8 +80,7 @@ public class JSONRules {
 			log("Genesis can't process package. Please update Genesis to latest version and try again.");
 			log("Genesis JSON parser version: " + VERSION);
 			log("Package JSON version: " + version);
-			
-			return;
+			return false;
 		}
 
 		if (obj.containsKey("title")) {
@@ -83,13 +90,15 @@ public class JSONRules {
 		JSONArray steps = (JSONArray) obj.get("steps");
 		if (steps.size() == 0) {
 			log("Invalid JSON structure (no steps defined)");
-			return;
+			return false;
 		}
 
 		for(int i=0; i<steps.size(); i++) {
 			JSONObject step = (JSONObject) steps.get(i);
 			parseStep(step);
 		}
+		
+		return true;
 	}
 
 	/*
@@ -127,7 +136,7 @@ public class JSONRules {
 				log("Dependency detected: " + v);
 
 				StringBuffer appJSON = HTTP.get(m_catalog + "/app?openagent&name=" + v);
-				JSONRules dependency = new JSONRules(this.m_session, this.m_catalog);
+				JSONRules dependency = new JSONRules(this.m_session, this.m_catalog, this.m_logger);
 				dependency.execute(appJSON.toString());
 			}
 		} catch (IOException e) {
@@ -396,8 +405,14 @@ public class JSONRules {
 		return database;
 	}
 
+	public StringBuffer getLogBuffer() {
+		return m_logBuffer;
+	}
 
 	private void log(Object o) {
+		getLogBuffer().append(o.toString());
+		getLogBuffer().append("\\n");
 		System.out.println(o.toString());
 	}
+
 }

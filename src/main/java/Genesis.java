@@ -1,17 +1,20 @@
 import java.io.File;
+
 import java.io.IOException;
 import java.nio.file.Files;
 
 import net.prominic.gja_v20220405.JavaServerAddinGenesis;
 import net.prominic.install.JSONRules;
+import net.prominic.log.Logger;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
 	private String				m_catalog					= "";
-
+	private Logger 				m_logger					= null;
+	
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.4";
+		return "0.6.5";
 	}
 
 	@Override
@@ -36,7 +39,12 @@ public class Genesis extends JavaServerAddinGenesis {
 			logMessage("connection (*FAILED*) with: " + m_catalog);
 		}
 	}
-
+	
+	@Override
+	protected void runNotesBeforeListen() {
+		m_logger = new Logger(m_session, m_catalog);
+	}
+	
 	/*
 	 * test connection with Domino App Catalog (dac.nsf)
 	 */
@@ -141,11 +149,12 @@ public class Genesis extends JavaServerAddinGenesis {
 			}
 
 			// find addin in catalog
-			String name = optArr[1];
-			StringBuffer buf = HTTP.get(m_catalog + "/app?openagent&name=" + name);
+			String app = optArr[1];
+			StringBuffer buf = HTTP.get(m_catalog + "/app?openagent&name=" + app);
 
-			JSONRules rules = new JSONRules(m_session, m_catalog);
-			rules.execute(buf.toString());
+			JSONRules rules = new JSONRules(m_session, m_catalog, m_logger);
+			boolean res = rules.execute(buf.toString());
+			m_logger.logInstall(app, JSONRules.VERSION, res, rules.getLogBuffer().toString());
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
