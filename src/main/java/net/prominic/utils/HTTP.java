@@ -1,4 +1,4 @@
-
+package net.prominic.utils;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

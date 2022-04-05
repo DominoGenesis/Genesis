@@ -2,9 +2,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import net.prominic.gja_v20220405.HTTP;
-import net.prominic.gja_v20220405.JSONRules;
 import net.prominic.gja_v20220405.JavaServerAddinGenesis;
+import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
 	private String				m_catalog					= "";

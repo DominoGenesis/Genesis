@@ -1,6 +1,7 @@
-
+package net.prominic.install;
 
 import java.io.File;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
@@ -16,8 +17,8 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import lotus.domino.Session;
-import net.prominic.gja_v20220405.DominoUtils;
-import net.prominic.gja_v20220405.HTTP;
+import net.prominic.utils.DominoUtils;
+import net.prominic.utils.HTTP;
 import lotus.domino.Database;
 import lotus.domino.Document;
 import lotus.domino.DocumentCollection;

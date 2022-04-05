@@ -1,3 +1,4 @@
+package net.prominic.utils;
 
 
 import lotus.domino.Database;
