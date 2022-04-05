@@ -1,6 +1,5 @@
 package net.prominic.utils;
 
-
 import lotus.domino.Database;
 import lotus.domino.Document;
 import lotus.domino.NoteCollection;

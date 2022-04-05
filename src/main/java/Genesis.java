@@ -1,7 +1,5 @@
 import java.io.File;
-
 import java.io.IOException;
-import java.nio.file.Files;
 
 import net.prominic.gja_v20220405.JavaServerAddinGenesis;
 import net.prominic.install.JSONRules;
@@ -19,7 +17,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-04-05 18:45";
+		return "2022-04-05 18:15";
 	}
 
 	@Override
@@ -80,9 +78,6 @@ public class Genesis extends JavaServerAddinGenesis {
 		else if(cmd.startsWith("install")) {
 			install(cmd);
 		}
-		else if(cmd.startsWith("cleanup")) {
-			cleanup();
-		}
 		else {
 			logMessage("Command is not recognized (use -h or help to get details)");
 			return false;
@@ -90,43 +85,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 		return true;
 	}
-
-	/*
-	 * Review all installed addins and delete folders if addin is uninstalled
-	 */
-	private void cleanup() {
-		String[] addinName = this.getAllAddin();
-
-		for(int i=0; i<addinName.length; i++) {
-			String javaAddin = JAVA_ADDIN_ROOT + File.separator + addinName[i];
-			boolean status = isLive(javaAddin);
-			if (!status) {
-				File f = new File(javaAddin + File.separator + COMMAND_FILE_NAME);
-				String cmd = this.readFile(f);
-				if (cmd.equalsIgnoreCase("uninstall")) {
-					File dir = new File(javaAddin);
-					deleteDir(dir);
-					logMessage("deleted: " + javaAddin);
-				}
-			}
-		}
-	}
 	
-	/*
-	 * Delete directory with files
-	 */
-	void deleteDir(File file) {
-	    File[] contents = file.listFiles();
-	    if (contents != null) {
-	        for (File f : contents) {
-	            if (! Files.isSymbolicLink(f.toPath())) {
-	                deleteDir(f);
-	            }
-	        }
-	    }
-	    file.delete();
-	}
-
 	private void showState() {
 		String[] addinName = this.getAllAddin();
 
@@ -152,7 +111,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			String app = optArr[1];
 			StringBuffer buf = HTTP.get(m_catalog + "/app?openagent&name=" + app);
 
-			JSONRules rules = new JSONRules(m_session, m_catalog, m_logger);
+			JSONRules rules = new JSONRules(m_session, m_catalog);
 			boolean res = rules.execute(buf.toString());
 			m_logger.logInstall(app, JSONRules.VERSION, res, rules.getLogBuffer().toString());
 		} catch (IOException e) {

@@ -1,7 +1,6 @@
 package net.prominic.install;
 
 import java.io.File;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
@@ -17,26 +16,24 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import lotus.domino.Session;
-import net.prominic.log.Logger;
+import lotus.domino.Database;
+import lotus.domino.DocumentCollection;
+import lotus.domino.Document;
+import lotus.domino.NotesException;
+
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
-import lotus.domino.Database;
-import lotus.domino.Document;
-import lotus.domino.DocumentCollection;
-import lotus.domino.NotesException;
 
 public class JSONRules {
 	private Session m_session;
 	private String m_catalog;
-	private Logger m_logger;
 	private StringBuffer m_logBuffer;
 	
 	public final static String VERSION = "0.2.4";
 	
-	public JSONRules(Session session, String catalog, Logger logger) {
+	public JSONRules(Session session, String catalog) {
 		m_session = session;
 		m_catalog = catalog;
-		m_logger = logger;
 	}
 
 	public boolean execute(String json) {
@@ -45,7 +42,7 @@ public class JSONRules {
 			JSONObject jsonObject = (JSONObject) parser.parse(json);
 			return execute(jsonObject);
 		} catch (ParseException e) {
-			e.printStackTrace();
+			logEx(e);
 		}
 		return false;
 	}
@@ -56,7 +53,7 @@ public class JSONRules {
 			JSONObject jsonObject = (JSONObject) parser.parse(reader);
 			return execute(jsonObject);
 		} catch (IOException | ParseException e) {
-			e.printStackTrace();
+			logEx(e);
 		}
 		return false;
 	}
@@ -83,14 +80,14 @@ public class JSONRules {
 			return false;
 		}
 
-		if (obj.containsKey("title")) {
-			this.log(obj.get("title"));
-		}
-
 		JSONArray steps = (JSONArray) obj.get("steps");
 		if (steps.size() == 0) {
 			log("Invalid JSON structure (no steps defined)");
 			return false;
+		}
+
+		if (obj.containsKey("title")) {
+			log(obj.get("title"));
 		}
 
 		for(int i=0; i<steps.size(); i++) {
@@ -136,11 +133,11 @@ public class JSONRules {
 				log("Dependency detected: " + v);
 
 				StringBuffer appJSON = HTTP.get(m_catalog + "/app?openagent&name=" + v);
-				JSONRules dependency = new JSONRules(this.m_session, this.m_catalog, this.m_logger);
+				JSONRules dependency = new JSONRules(this.m_session, this.m_catalog);
 				dependency.execute(appJSON.toString());
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			logEx(e);
 		}
 	}
 
@@ -179,9 +176,9 @@ public class JSONRules {
 				saveFile(from, to);
 			}
 		} catch (NotesException e) {
-			e.printStackTrace();
+			logEx(e);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logEx(e);
 		}
 	}
 
@@ -228,7 +225,7 @@ public class JSONRules {
 			try {
 				setNotesINI(name, value, multivalue, sep);
 			} catch (NotesException e) {
-				e.printStackTrace();
+				logEx(e);
 			}
 		}
 	}
@@ -291,7 +288,7 @@ public class JSONRules {
 			JSONArray documents = (JSONArray) json.get("documents");
 			parseDocuments(database, documents);
 		} catch (NotesException e) {
-			e.printStackTrace();
+			logEx(e);
 		}
 	}
 
@@ -320,7 +317,7 @@ public class JSONRules {
 			doc = database.createDocument();
 			updateDocument(doc, items, computeWithForm);
 		} catch (NotesException e) {
-			e.printStackTrace();
+			logEx(e);
 		}
 	}
 
@@ -351,7 +348,7 @@ public class JSONRules {
 			Document doc = col.getFirstDocument();
 			updateDocument(doc, items, computeWithForm);
 		} catch (NotesException e) {
-			e.printStackTrace();
+			logEx(e);
 		}
 	}
 
@@ -399,7 +396,7 @@ public class JSONRules {
 			}
 			log(database.getTitle());
 		} catch (NotesException e) {
-			e.printStackTrace();
+			logEx(e);
 		}
 
 		return database;
@@ -409,10 +406,16 @@ public class JSONRules {
 		return m_logBuffer;
 	}
 
+	private void logEx(Exception e) {
+		e.printStackTrace();
+		m_logBuffer.append(e.getLocalizedMessage());
+		m_logBuffer.append(System.getProperty("line.separator"));
+	}
+	
 	private void log(Object o) {
-		getLogBuffer().append(o.toString());
-		getLogBuffer().append("\\n");
 		System.out.println(o.toString());
+		m_logBuffer.append(o.toString());
+		m_logBuffer.append(System.getProperty("line.separator"));
 	}
 
 }
