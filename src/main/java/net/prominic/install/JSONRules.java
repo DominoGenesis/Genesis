@@ -69,7 +69,10 @@ public class JSONRules {
 		@SuppressWarnings("unchecked")
 		String version = (String) obj.getOrDefault("version", "?");
 		if (!version.equalsIgnoreCase(VERSION)) {
-			log("Genesis is outdated. Please update it to version: " + VERSION);
+			log("Genesis can't process package. Please update Genesis to latest version and try again.");
+			log("Genesis JSON parser version: " + VERSION);
+			log("Package JSON version: " + version);
+			
 			return;
 		}
 
