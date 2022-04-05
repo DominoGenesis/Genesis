@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import net.prominic.gja_v20220405.JavaServerAddinGenesis;
+import net.prominic.install.JSONRules;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -143,7 +144,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			String name = optArr[1];
 			StringBuffer buf = HTTP.get(m_catalog + "/app?openagent&name=" + name);
 
-			JSONRules rules = new JSONRules(m_session, m_catalog, this.getCoreVersion());
+			JSONRules rules = new JSONRules(m_session, m_catalog);
 			rules.execute(buf.toString());
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
