@@ -18,20 +18,27 @@ import lotus.domino.Database;
 import lotus.domino.DocumentCollection;
 import lotus.domino.Document;
 import lotus.domino.NotesException;
-
+import net.prominic.gja_v20220411.GLogger;
+import net.prominic.gja_v20220411.ProgramConfig;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 
 public class JSONRules {
 	private Session m_session;
+	private Database m_ab;
+	private String m_addin;
 	private String m_catalog;
+	private GLogger m_logger;
 	private StringBuffer m_logBuffer;
 	
 	public final static String VERSION = "0.2.4";
 	
-	public JSONRules(Session session, String catalog) {
+	public JSONRules(Session session, Database ab, String addin, String catalog, GLogger logger) {
 		m_session = session;
+		m_ab = ab;
+		m_addin = addin;
 		m_catalog = catalog;
+		m_logger = logger;
 	}
 
 	public boolean execute(String json) {
@@ -120,9 +127,17 @@ public class JSONRules {
 		else if(step.containsKey("messages")) {
 			doMessages((JSONArray) step.get("messages"));
 		}
-		else if(step.containsKey("sendConsoleCommand")) {
-			doConsole((JSONArray) step.get("sendConsoleCommand"));
+		else if(step.containsKey("programConfig")) {
+			programConfig((Integer) step.get("programConfig"));
 		}
+	}
+
+	/*
+	 * Used to setup program documents to load addin
+	 */
+	private void programConfig(int state) {
+		ProgramConfig pc = new ProgramConfig(this.m_addin, null, m_logger);
+		pc.setState(m_ab, state);		// set program documents in LOAD state
 	}
 
 	private void doDependencies(JSONArray list) {
@@ -135,7 +150,7 @@ public class JSONRules {
 				log("Dependency detected: " + v);
 
 				StringBuffer appJSON = HTTP.get(m_catalog + "/app?openagent&name=" + v);
-				JSONRules dependency = new JSONRules(this.m_session, this.m_catalog);
+				JSONRules dependency = new JSONRules(this.m_session, this.m_ab, this.m_addin, this.m_catalog, this.m_logger);
 				dependency.execute(appJSON.toString());
 			}
 		} catch (IOException e) {
@@ -155,23 +170,6 @@ public class JSONRules {
 		}
 	}
 
-	/*
-	 * Send command to console
-	 */
-	private void doConsole(JSONArray list) {
-		if (list == null || list.size() == 0) return;
-
-		for(int i=0; i<list.size(); i++) {
-			String v = (String) list.get(i);
-			
-			try {
-				m_session.sendConsoleCommand(m_session.getServerName(), v);
-			} catch (NotesException e) {
-				this.log(e);
-			}
-		}
-	}
-	
 	/*
 	 * Download files
 	 */

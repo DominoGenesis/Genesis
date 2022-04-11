@@ -17,7 +17,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-04-11 18:20";
+		return "2022-04-11 23:55";
 	}
 
 	@Override
@@ -106,7 +106,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			String app = optArr[1];
 			StringBuffer buf = HTTP.get(m_catalog + "/app?openagent&name=" + app);
 
-			JSONRules rules = new JSONRules(m_session, m_catalog);
+			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog, this.m_logger);
 			boolean res = rules.execute(buf.toString());
 
 			logInstall(app, JSONRules.VERSION, res, rules.getLogBuffer().toString());
