@@ -1,23 +1,23 @@
 import java.io.File;
-import java.io.IOException;
 
-import net.prominic.gja_v20220405.JavaServerAddinGenesis;
+import java.io.IOException;
+import java.net.URLEncoder;
+import lotus.domino.NotesException;
+import net.prominic.gja_v20220411.JavaServerAddinGenesis;
 import net.prominic.install.JSONRules;
-import net.prominic.log.Logger;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
 	private String				m_catalog					= "";
-	private Logger 				m_logger					= null;
-	
+
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.5";
+		return "0.6.6";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-04-05 18:15";
+		return "2022-04-11 18:15";
 	}
 
 	@Override
@@ -34,15 +34,10 @@ public class Genesis extends JavaServerAddinGenesis {
 
 		// check if connection could be established
 		if (!check()) {
-			logMessage("connection (*FAILED*) with: " + m_catalog);
+			logWarning("connection (*FAILED*) with: " + m_catalog);
 		}
 	}
-	
-	@Override
-	protected void runNotesBeforeListen() {
-		m_logger = new Logger(m_session, m_catalog);
-	}
-	
+
 	/*
 	 * test connection with Domino App Catalog (dac.nsf)
 	 */
@@ -52,7 +47,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			String url = m_catalog.concat("/check?openagent");
 			buf = HTTP.get(url);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logSevere(e);
 		}
 		return buf.toString().equals("OK");
 	}
@@ -66,7 +61,7 @@ public class Genesis extends JavaServerAddinGenesis {
 				logMessage("OK to connect with with: " + m_catalog);
 			}
 			else {
-				logMessage("*FAILED* to connect with: " + m_catalog);
+				logSevere("*FAILED* to connect with: " + m_catalog);
 			}
 		}
 		else if ("list".equals(cmd)) {
@@ -85,7 +80,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 		return true;
 	}
-	
+
 	private void showState() {
 		String[] addinName = this.getAllAddin();
 
@@ -93,7 +88,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			String javaAddin = JAVA_ADDIN_ROOT + File.separator + addinName[i];
 
 			boolean status = isLive(javaAddin);
-			this.logMessage(addinName[i] + " : " + String.valueOf(status));
+			logMessage(addinName[i] + " : " + String.valueOf(status));
 		}
 	}
 
@@ -113,10 +108,33 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			JSONRules rules = new JSONRules(m_session, m_catalog);
 			boolean res = rules.execute(buf.toString());
-			m_logger.logInstall(app, JSONRules.VERSION, res, rules.getLogBuffer().toString());
+			logInstall(app, JSONRules.VERSION, res, rules.getLogBuffer().toString());
+
+			//
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
+	}
+
+	public boolean logInstall(String app, String version, boolean status, String console) {
+		try {
+			String server = m_session.getServerName();
+			server = URLEncoder.encode(server, "UTF-8");
+			app = URLEncoder.encode(app, "UTF-8");
+			version = URLEncoder.encode(version, "UTF-8");
+			console = URLEncoder.encode(console, "UTF-8");
+
+			String endpoint = m_catalog + "/log?openAgent";
+			StringBuffer res = HTTP.post(endpoint, "&server=" + server + "&app=" + app + "&version=" + version + "&status=" + (status ? "1" : "") + "&console=" + console);
+
+			return res.toString().equalsIgnoreCase("OK");
+		} catch (IOException e) {
+			logWarning(e.getMessage());
+		} catch (NotesException e) {
+			logWarning(e.getMessage());
+		}
+
+		return false;
 	}
 
 	/*
@@ -131,7 +149,7 @@ public class Genesis extends JavaServerAddinGenesis {
 				logMessage("   ".concat(listArr[i]));	
 			}
 		} catch (IOException e) {
-			logMessage(e.getMessage());
+			logWarning(e.getMessage());
 		}
 	}
 
