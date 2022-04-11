@@ -17,7 +17,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-04-11 18:15";
+		return "2022-04-11 18:20";
 	}
 
 	@Override
@@ -61,7 +61,7 @@ public class Genesis extends JavaServerAddinGenesis {
 				logMessage("OK to connect with with: " + m_catalog);
 			}
 			else {
-				logSevere("*FAILED* to connect with: " + m_catalog);
+				logWarning("*FAILED* to connect with: " + m_catalog);
 			}
 		}
 		else if ("list".equals(cmd)) {
@@ -108,9 +108,10 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			JSONRules rules = new JSONRules(m_session, m_catalog);
 			boolean res = rules.execute(buf.toString());
-			logInstall(app, JSONRules.VERSION, res, rules.getLogBuffer().toString());
 
-			//
+			logInstall(app, JSONRules.VERSION, res, rules.getLogBuffer().toString());
+			m_logger.info(rules.getLogBuffer().toString());
+
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
@@ -129,9 +130,9 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			return res.toString().equalsIgnoreCase("OK");
 		} catch (IOException e) {
-			logWarning(e.getMessage());
+			logWarning(e);
 		} catch (NotesException e) {
-			logWarning(e.getMessage());
+			logWarning(e);
 		}
 
 		return false;
@@ -157,10 +158,10 @@ public class Genesis extends JavaServerAddinGenesis {
 	 * Extend default Help
 	 */
 	protected void showHelpExt() {
-		AddInLogMessageText("   check            Check connection with Catalog");
-		AddInLogMessageText("   list             List of available Java addin in the Catalog");
-		AddInLogMessageText("   state            Show all installed addin (active and non active)");
-		AddInLogMessageText("   install <name>   Install Java addin from the Catalog");
+		logMessage("   check            Check connection with Catalog");
+		logMessage("   list             List of available Java addin in the Catalog");
+		logMessage("   state            Show all installed addin (active and non active)");
+		logMessage("   install <name>   Install Java addin from the Catalog");
 	}
 
 	/*
