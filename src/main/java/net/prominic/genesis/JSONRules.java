@@ -1,12 +1,10 @@
-package net.prominic.install;
+package net.prominic.genesis;
 
 import java.io.File;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,7 +40,7 @@ public class JSONRules {
 			JSONObject jsonObject = (JSONObject) parser.parse(json);
 			return execute(jsonObject);
 		} catch (ParseException e) {
-			logEx(e);
+			log(e);
 		}
 		return false;
 	}
@@ -52,8 +50,10 @@ public class JSONRules {
 		try {
 			JSONObject jsonObject = (JSONObject) parser.parse(reader);
 			return execute(jsonObject);
-		} catch (IOException | ParseException e) {
-			logEx(e);
+		} catch (IOException e) {
+			log(e);
+		} catch (ParseException e) {
+			log(e);
 		}
 		return false;
 	}
@@ -71,8 +71,7 @@ public class JSONRules {
 			return false;
 		}
 
-		@SuppressWarnings("unchecked")
-		String version = (String) obj.getOrDefault("version", "?");
+		String version = obj.containsKey("version") ? (String) obj.get("version") : "?";
 		if (!version.equalsIgnoreCase(VERSION)) {
 			log("Genesis can't process package. Please update Genesis to latest version and try again.");
 			log("Genesis JSON parser version: " + VERSION);
@@ -121,6 +120,9 @@ public class JSONRules {
 		else if(step.containsKey("messages")) {
 			doMessages((JSONArray) step.get("messages"));
 		}
+		else if(step.containsKey("sendConsoleCommand")) {
+			doConsole((JSONArray) step.get("sendConsoleCommand"));
+		}
 	}
 
 	private void doDependencies(JSONArray list) {
@@ -137,7 +139,7 @@ public class JSONRules {
 				dependency.execute(appJSON.toString());
 			}
 		} catch (IOException e) {
-			logEx(e);
+			log(e);
 		}
 	}
 
@@ -153,6 +155,23 @@ public class JSONRules {
 		}
 	}
 
+	/*
+	 * Send command to console
+	 */
+	private void doConsole(JSONArray list) {
+		if (list == null || list.size() == 0) return;
+
+		for(int i=0; i<list.size(); i++) {
+			String v = (String) list.get(i);
+			
+			try {
+				m_session.sendConsoleCommand(m_session.getServerName(), v);
+			} catch (NotesException e) {
+				this.log(e);
+			}
+		}
+	}
+	
 	/*
 	 * Download files
 	 */
@@ -176,9 +195,9 @@ public class JSONRules {
 				saveFile(from, to);
 			}
 		} catch (NotesException e) {
-			logEx(e);
+			log(e);
 		} catch (IOException e) {
-			logEx(e);
+			log(e);
 		}
 	}
 
@@ -195,9 +214,9 @@ public class JSONRules {
 
 		// create sub folders if needed
 		String toPath = to.substring(0, to.lastIndexOf("/"));
-		Path path = Paths.get(toPath);
-		if (!Files.exists(path)) {
-			Files.createDirectories(path);
+		File dir = new File(toPath);
+		if (!dir.exists()) {
+			dir.mkdirs();
 		}
 
 		boolean res = HTTP.saveFile(new URL(from), to);
@@ -219,13 +238,14 @@ public class JSONRules {
 
 			String name = (String) obj.get("name");
 			String value = String.valueOf(obj.get("value"));
-			boolean multivalue = obj.containsKey("multivalue") && (boolean) obj.get("multivalue");
+			
+			boolean multivalue = obj.containsKey("multivalue") && (Boolean)obj.get("multivalue");
 			String sep = multivalue ? (String) obj.get("sep") : "";
 
 			try {
 				setNotesINI(name, value, multivalue, sep);
 			} catch (NotesException e) {
-				logEx(e);
+				log(e);
 			}
 		}
 	}
@@ -263,8 +283,8 @@ public class JSONRules {
 			Database database = null;
 			String action = (String) json.get("action");
 			String filePath = (String) json.get("filePath");
-			boolean sign = json.containsKey("sign") && (boolean) json.get("sign");
-
+			boolean sign = json.containsKey("sign") && (Boolean) json.get("sign");
+			
 			log(" > " + filePath);
 
 			if ("create".equalsIgnoreCase(action)) {
@@ -288,7 +308,7 @@ public class JSONRules {
 			JSONArray documents = (JSONArray) json.get("documents");
 			parseDocuments(database, documents);
 		} catch (NotesException e) {
-			logEx(e);
+			log(e);
 		}
 	}
 
@@ -299,7 +319,7 @@ public class JSONRules {
 			JSONObject doc = (JSONObject) array.get(i);
 
 			String action = (String) doc.get("action");
-			boolean computeWithForm = doc.containsKey("computeWithForm") && (boolean) doc.get("computeWithForm");
+			boolean computeWithForm = doc.containsKey("computeWithForm") && (Boolean) doc.get("computeWithForm");
 			if ("create".equalsIgnoreCase(action)) {
 				createDocuments(database, doc, computeWithForm);
 			}
@@ -317,7 +337,7 @@ public class JSONRules {
 			doc = database.createDocument();
 			updateDocument(doc, items, computeWithForm);
 		} catch (NotesException e) {
-			logEx(e);
+			log(e);
 		}
 	}
 
@@ -348,7 +368,7 @@ public class JSONRules {
 			Document doc = col.getFirstDocument();
 			updateDocument(doc, items, computeWithForm);
 		} catch (NotesException e) {
-			logEx(e);
+			log(e);
 		}
 	}
 
@@ -396,7 +416,7 @@ public class JSONRules {
 			}
 			log(database.getTitle());
 		} catch (NotesException e) {
-			logEx(e);
+			log(e);
 		}
 
 		return database;
@@ -406,7 +426,7 @@ public class JSONRules {
 		return m_logBuffer;
 	}
 
-	private void logEx(Exception e) {
+	private void log(Exception e) {
 		e.printStackTrace();
 		m_logBuffer.append(e.getLocalizedMessage());
 		m_logBuffer.append(System.getProperty("line.separator"));

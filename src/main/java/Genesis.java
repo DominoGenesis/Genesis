@@ -3,8 +3,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 import lotus.domino.NotesException;
+import net.prominic.genesis.JSONRules;
 import net.prominic.gja_v20220411.JavaServerAddinGenesis;
-import net.prominic.install.JSONRules;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -12,7 +12,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.6";
+		return "0.6.7";
 	}
 
 	@Override
@@ -111,7 +111,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			logInstall(app, JSONRules.VERSION, res, rules.getLogBuffer().toString());
 			m_logger.info(rules.getLogBuffer().toString());
-
+ 
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
