@@ -1,10 +1,9 @@
 import java.io.File;
-
 import java.io.IOException;
 import java.net.URLEncoder;
 import lotus.domino.NotesException;
 import net.prominic.genesis.JSONRules;
-import net.prominic.gja_v20220411.JavaServerAddinGenesis;
+import net.prominic.gja_v20220413.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -12,12 +11,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.7";
+		return "0.6.8";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-04-11 23:55";
+		return "2022-04-13 15:05";
 	}
 
 	@Override
