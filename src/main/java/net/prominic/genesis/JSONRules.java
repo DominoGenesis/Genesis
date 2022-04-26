@@ -17,8 +17,8 @@ import lotus.domino.Database;
 import lotus.domino.DocumentCollection;
 import lotus.domino.Document;
 import lotus.domino.NotesException;
-import net.prominic.gja_v20220413.GLogger;
-import net.prominic.gja_v20220413.ProgramConfig;
+import net.prominic.gja_v20220426.GLogger;
+import net.prominic.gja_v20220426.ProgramConfig;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 
@@ -285,9 +285,16 @@ public class JSONRules {
 			log(" > " + filePath);
 
 			if ("create".equalsIgnoreCase(action)) {
-				String title = (String) json.get("title");
-				String templatePath = (String) json.get("templatePath");
-				database = createDatabaseFromTemplate(filePath, title, templatePath);
+				if (json.containsKey("templatePath")) {
+					String title = (String) json.get("title");
+					String templatePath = (String) json.get("templatePath");
+					database = createDatabaseFromTemplate(filePath, title, templatePath);	
+				}
+				else if(json.containsKey("replicaPath")) {
+					String replicaServer = (String) json.get("replicaServer");
+					String replicaPath = (String) json.get("replicaPath");
+					database = createDatabaseReplica(filePath, replicaServer, replicaPath);	
+				}
 			}
 			else {
 				database = m_session.getDatabase(null, filePath);
@@ -383,7 +390,7 @@ public class JSONRules {
 		}
 		doc.save();
 	}
-
+	
 	private Database createDatabaseFromTemplate(String filePath, String title, String templatePath) {
 		Database database = null;
 		try {
@@ -419,6 +426,24 @@ public class JSONRules {
 		return database;
 	}
 
+	private Database createDatabaseReplica(String filePath, String replicaServer, String replicaPath) {
+		Database database = null;
+		try {
+			Database replicaDb = m_session.getDatabase(replicaServer, replicaPath);
+			if (replicaDb == null) {
+				log(replicaServer + "!!" + replicaPath + " - replica not found");
+				return null;
+			}
+			
+			database = replicaDb.createReplica(null, filePath);
+			log(database.getFilePath() + " - has been created");
+		} catch (NotesException e) {
+			log(e);
+		}
+
+		return database;
+	}
+	
 	public StringBuffer getLogBuffer() {
 		return m_logBuffer;
 	}

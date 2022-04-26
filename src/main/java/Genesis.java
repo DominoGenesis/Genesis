@@ -3,7 +3,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import lotus.domino.NotesException;
 import net.prominic.genesis.JSONRules;
-import net.prominic.gja_v20220413.JavaServerAddinGenesis;
+import net.prominic.gja_v20220426.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -16,7 +16,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-04-13 15:05";
+		return "2022-04-26 15:45";
 	}
 
 	@Override
@@ -95,7 +95,7 @@ public class Genesis extends JavaServerAddinGenesis {
 		try {
 			// validate command
 			String[] optArr = cmd.split("\\s+");
-			if (optArr.length != 2) {
+			if (optArr.length < 2) {
 				logMessage("Command is not recognized (use -h or help to get details)");
 				logMessage("Install and update command should addin as a parameter");
 				return;
@@ -103,10 +103,17 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			// find addin in catalog
 			String app = optArr[1];
-			StringBuffer buf = HTTP.get(m_catalog + "/app?openagent&name=" + app);
+			String buf = HTTP.get(m_catalog + "/app?openagent&name=" + app).toString();
+
+			// inject optional parameters
+			for(int i = 2; i <= args.length; i++) {
+				logMessage(String.valueOf(i));
+				logMessage(args[i]);
+				buf = buf.replace("${"+String.valueOf(i)+"}", args[i]);
+			}	
 
 			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog, this.m_logger);
-			boolean res = rules.execute(buf.toString());
+			boolean res = rules.execute(buf);
 
 			logInstall(app, JSONRules.VERSION, res, rules.getLogBuffer().toString());
 			m_logger.info(rules.getLogBuffer().toString());
