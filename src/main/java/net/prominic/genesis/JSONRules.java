@@ -429,14 +429,20 @@ public class JSONRules {
 	private Database createDatabaseReplica(String filePath, String replicaServer, String replicaPath) {
 		Database database = null;
 		try {
-			Database replicaDb = m_session.getDatabase(replicaServer, replicaPath);
-			if (replicaDb == null) {
-				log(replicaServer + "!!" + replicaPath + " - replica not found");
-				return null;
+			database = m_session.getDatabase(null, filePath, false);
+			if (database != null && database.isOpen()) {
+				log(database.getFilePath() + " - already exists; skip creating;");
 			}
-			
-			database = replicaDb.createReplica(null, filePath);
-			log(database.getFilePath() + " - has been created");
+			else {
+				Database replicaDb = m_session.getDatabase(replicaServer, replicaPath);
+				if (replicaDb == null) {
+					log(replicaServer + "!!" + replicaPath + " - replica not found");
+					return null;
+				}
+				
+				database = replicaDb.createReplica(null, filePath);
+				log(database.getFilePath() + " - has been created");
+			}
 		} catch (NotesException e) {
 			log(e);
 		}
