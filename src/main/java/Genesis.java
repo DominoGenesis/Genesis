@@ -16,7 +16,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-04-26 15:45";
+		return "2022-04-26 21:45";
 	}
 
 	@Override
@@ -94,23 +94,36 @@ public class Genesis extends JavaServerAddinGenesis {
 	private void install(String cmd) {
 		try {
 			// validate command
-			String[] optArr = cmd.split("\\s+");
-			if (optArr.length < 2) {
+			String[] parts = cmd.split("\\s+");
+			if (parts.length < 2) {
 				logMessage("Command is not recognized (use -h or help to get details)");
 				logMessage("Install and update command should addin as a parameter");
 				return;
 			}
 
-			// find addin in catalog
-			String app = optArr[1];
+			// get addin name and it's JSON
+			String app = parts[1];
 			String buf = HTTP.get(m_catalog + "/app?openagent&name=" + app).toString();
 
+			// check number of parameters
+			int counter = 0;
+			for(int i = 0; i < 20; i++) {
+				if (buf.contains(String.format("{%d}", i))) {
+					counter++;
+				}
+				else {
+					i = 20;
+				}
+			}
+			if (counter + 2 > parts.length) {
+				logMessage(String.format("This installation requires %d parameters", counter));
+				return;
+			}
+			
 			// inject optional parameters
-			for(int i = 2; i < optArr.length; i++) {
-				String index = String.valueOf(i-2);
-				logMessage(index);
-				logMessage(optArr[i]);
-				buf = buf.replace("${"+index+"}", optArr[i]);
+			for(int i = 0; i < counter; i++) {
+				logMessage(String.format("Param ${%d} => %s", i, parts[i+2]));
+				buf = buf.replace(String.format("{%d}", i), parts[i+2]);
 			}	
 
 			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog, this.m_logger);
