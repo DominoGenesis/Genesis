@@ -106,10 +106,11 @@ public class Genesis extends JavaServerAddinGenesis {
 			String buf = HTTP.get(m_catalog + "/app?openagent&name=" + app).toString();
 
 			// inject optional parameters
-			for(int i = 2; i <= args.length; i++) {
-				logMessage(String.valueOf(i));
-				logMessage(args[i]);
-				buf = buf.replace("${"+String.valueOf(i)+"}", args[i]);
+			for(int i = 2; i < optArr.length; i++) {
+				String index = String.valueOf(i-2);
+				logMessage(index);
+				logMessage(optArr[i]);
+				buf = buf.replace("${"+index+"}", optArr[i]);
 			}	
 
 			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog, this.m_logger);
