@@ -3,7 +3,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import lotus.domino.NotesException;
 import net.prominic.genesis.JSONRules;
-import net.prominic.gja_v20220426.JavaServerAddinGenesis;
+import net.prominic.gja_v20220427.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -16,7 +16,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-04-26 21:45";
+		return "2022-04-27 16:45";
 	}
 
 	@Override

@@ -17,8 +17,8 @@ import lotus.domino.Database;
 import lotus.domino.DocumentCollection;
 import lotus.domino.Document;
 import lotus.domino.NotesException;
-import net.prominic.gja_v20220426.GLogger;
-import net.prominic.gja_v20220426.ProgramConfig;
+import net.prominic.gja_v20220427.GLogger;
+import net.prominic.gja_v20220427.ProgramConfig;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 
