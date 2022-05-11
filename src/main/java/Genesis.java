@@ -3,7 +3,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import lotus.domino.NotesException;
 import net.prominic.genesis.JSONRules;
-import net.prominic.gja_v20220427.JavaServerAddinGenesis;
+import net.prominic.gja_v20220511.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -16,11 +16,11 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-04-27 22:45";
+		return "2022-05-11 14:45";
 	}
 
 	@Override
-	protected void runNotesBeforeInitialize() {
+	protected boolean runNotesAfterInitialize() {
 		if (args != null && args.length > 0) {
 			m_catalog = args[0];
 			if ("dev".equals(m_catalog)) {
@@ -35,6 +35,8 @@ public class Genesis extends JavaServerAddinGenesis {
 		if (!check()) {
 			logWarning("connection (*FAILED*) with: " + m_catalog);
 		}
+
+		return true;
 	}
 
 	/*
