@@ -338,27 +338,19 @@ public class JSONRules {
 	private void updateDocuments(Database database, JSONObject json, boolean computeWithForm) {
 		log("- update document(s)");
 		JSONObject items = (JSONObject) json.get("items");
-		JSONObject findDocument = (JSONObject) json.get("findDocument");
-
+		JSONObject search = (JSONObject) json.get("search");
+		
 		try {
-			String search = "";
-			@SuppressWarnings("unchecked")
-			Set<Map.Entry<String, Object>> entries = findDocument.entrySet();
-			for (Map.Entry<String, Object> entry : entries) {
-				String name = entry.getKey();
-				Object value = entry.getValue();
-
-				if (!search.isEmpty()) {
-					search += " & ";
-				}
-				String newCondition = name + "=\"" + value + "\"";
-				search += newCondition;
-			}
-			log("search: " + search);
-
-			DocumentCollection col = database.search(search, null, 1);
+			String formula = (String) search.get("formula");
+			log("search (formula): " + formula);
+			
+			Long number = (Long) (search.containsKey("number") ? search.get("number") : 0);
+			log("number: " + number.toString());
+			
+			DocumentCollection col = database.search(formula, null, number.intValue());
 			if (col.getCount() == 0) return;
 
+			log("found doc");
 			Document doc = col.getFirstDocument();
 			updateDocument(doc, items, computeWithForm);
 		} catch (NotesException e) {
@@ -371,8 +363,10 @@ public class JSONRules {
 		Set<Map.Entry<String, Object>> entries = items.entrySet();
 		for (Map.Entry<String, Object> entry : entries) {
 			String name = entry.getKey();
-			Object value = entry.getValue();
-			doc.replaceItemValue(name, value);
+			String value = (String) entry.getValue();
+			log("name:" + name);
+			log("value:" + value);
+			doc.replaceItemValue(name, this.m_session.evaluate(value));
 		}
 
 		if (computeWithForm) {
