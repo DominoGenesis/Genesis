@@ -1,13 +1,16 @@
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Date;
+
 import lotus.domino.NotesException;
 import net.prominic.genesis.JSONRules;
-import net.prominic.gja_v20220512.JavaServerAddinGenesis;
+import net.prominic.gja_v20220517.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
-	private String				m_catalog					= "";
+	private String m_catalog = "";
 
 	@Override
 	protected String getJavaAddinVersion() {
@@ -16,7 +19,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-05-12 14:45";
+		return "2022-05-18 12:45";
 	}
 
 	@Override
@@ -26,14 +29,40 @@ public class Genesis extends JavaServerAddinGenesis {
 			if ("dev".equals(m_catalog)) {
 				m_catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 			}
-		}
-		else {
+		} else {
 			m_catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 		}
 
 		// check if connection could be established
 		if (!check()) {
 			logWarning("connection (*FAILED*) with: " + m_catalog);
+		}
+
+		// event to read instruction from catalog
+		String server;
+		try {
+			server = m_session.getServerName();
+		} catch (NotesException e) {
+			server = "n/a";
+		}
+
+		try {
+			EventCatalogReport eventCatalogSend = new EventCatalogReport("CatalogSend", 600, true, m_logger);
+			eventCatalogSend.Catalog = m_catalog;
+			eventCatalogSend.Server = URLEncoder.encode(server, "UTF-8");
+			eventCatalogSend.Data = URLEncoder.encode("message from Genesis at " + new Date().toString(), "UTF-8");
+			this.eventsAdd(eventCatalogSend);
+			
+			EventExecute eventExecute = new EventExecute("Execute", 60, true, m_logger);
+			eventExecute.Session = this.m_session;
+			eventExecute.AB = this.m_ab;
+			eventExecute.JavaAddinName = this.getJavaAddinName();
+			eventExecute.Catalog = this.m_catalog;
+			eventExecute.Logger = this.m_logger;
+			this.eventsAdd(eventExecute);
+
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
 		}
 
 		return true;
@@ -55,26 +84,22 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	protected boolean resolveMessageQueueState(String cmd) {
 		boolean flag = super.resolveMessageQueueState(cmd);
-		if (flag) return true;
+		if (flag)
+			return true;
 
 		if ("check".equals(cmd)) {
 			if (check()) {
 				logMessage("OK to connect with with: " + m_catalog);
-			}
-			else {
+			} else {
 				logWarning("*FAILED* to connect with: " + m_catalog);
 			}
-		}
-		else if ("list".equals(cmd)) {
+		} else if ("list".equals(cmd)) {
 			showList();
-		}
-		else if ("state".equals(cmd)) {
+		} else if ("state".equals(cmd)) {
 			showState();
-		}
-		else if(cmd.startsWith("install")) {
+		} else if (cmd.startsWith("install")) {
 			install(cmd);
-		}
-		else {
+		} else {
 			logMessage("Command is not recognized (use -h or help to get details)");
 			return false;
 		}
@@ -85,7 +110,7 @@ public class Genesis extends JavaServerAddinGenesis {
 	private void showState() {
 		String[] addinName = this.getAllAddin();
 
-		for(int i=0; i<addinName.length; i++) {
+		for (int i = 0; i < addinName.length; i++) {
 			String javaAddin = JAVA_ADDIN_ROOT + File.separator + addinName[i];
 
 			boolean status = isLive(javaAddin);
@@ -109,11 +134,10 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			// check number of parameters
 			int counter = 0;
-			for(int i = 0; i < 20; i++) {
+			for (int i = 0; i < 20; i++) {
 				if (buf.contains(String.format("{%d}", i))) {
 					counter++;
-				}
-				else {
+				} else {
 					i = 20;
 				}
 			}
@@ -121,34 +145,35 @@ public class Genesis extends JavaServerAddinGenesis {
 				logMessage(String.format("This installation requires %d parameters", counter));
 				return;
 			}
-			
-			// inject optional parameters
-			for(int i = 0; i < counter; i++) {
-				logMessage(String.format("Param ${%d} => %s", i, parts[i+2]));
-				buf = buf.replace(String.format("{%d}", i), parts[i+2]);
-			}	
 
-			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog, this.m_logger);
+			// inject optional parameters
+			for (int i = 0; i < counter; i++) {
+				logMessage(String.format("Param ${%d} => %s", i, parts[i + 2]));
+				buf = buf.replace(String.format("{%d}", i), parts[i + 2]);
+			}
+
+			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog,
+					this.m_logger);
 			boolean res = rules.execute(buf);
 
-			logInstall(app, JSONRules.VERSION, res, rules.getLogBuffer().toString());
+			logInstall(app, res, rules.getLogBuffer().toString());
 			m_logger.info(rules.getLogBuffer().toString());
- 
+
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
 	}
 
-	public boolean logInstall(String app, String version, boolean status, String console) {
+	public boolean logInstall(String app, boolean status, String console) {
 		try {
 			String server = m_session.getServerName();
 			server = URLEncoder.encode(server, "UTF-8");
 			app = URLEncoder.encode(app, "UTF-8");
-			version = URLEncoder.encode(version, "UTF-8");
 			console = URLEncoder.encode(console, "UTF-8");
 
 			String endpoint = m_catalog + "/log?openAgent";
-			StringBuffer res = HTTP.post(endpoint, "&server=" + server + "&app=" + app + "&version=" + version + "&status=" + (status ? "1" : "") + "&console=" + console);
+			StringBuffer res = HTTP.post(endpoint, "&server=" + server + "&app=" + app
+					+ "&status=" + (status ? "1" : "") + "&console=" + console);
 
 			return res.toString().equalsIgnoreCase("OK");
 		} catch (IOException e) {
@@ -168,8 +193,8 @@ public class Genesis extends JavaServerAddinGenesis {
 			StringBuffer list = HTTP.get(m_catalog.concat("/list?openagent"));
 			String[] listArr = list.toString().split("\\|");
 			logMessage("*** List of App registered in Genesis Catalog ***");
-			for(int i = 0; i < listArr.length; i++) {
-				logMessage("   ".concat(listArr[i]));	
+			for (int i = 0; i < listArr.length; i++) {
+				logMessage("   ".concat(listArr[i]));
 			}
 		} catch (IOException e) {
 			logWarning(e.getMessage());

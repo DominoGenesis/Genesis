@@ -14,9 +14,6 @@ import java.nio.channels.ReadableByteChannel;
 
 import javax.net.ssl.HttpsURLConnection;
 
-/*
- * Just an example of HTTP client with post/get methods
- */
 public class HTTP {
 	public static StringBuffer post(String endpoint, String data) throws IOException {
 		HttpURLConnection con = getConnection(endpoint);

@@ -17,8 +17,8 @@ import lotus.domino.Database;
 import lotus.domino.DocumentCollection;
 import lotus.domino.Document;
 import lotus.domino.NotesException;
-import net.prominic.gja_v20220512.GLogger;
-import net.prominic.gja_v20220512.ProgramConfig;
+import net.prominic.gja_v20220517.GLogger;
+import net.prominic.gja_v20220517.ProgramConfig;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 
@@ -29,8 +29,6 @@ public class JSONRules {
 	private String m_catalog;
 	private GLogger m_logger;
 	private StringBuffer m_logBuffer;
-	
-	public final static String VERSION = "0.2.4";
 	
 	public JSONRules(Session session, Database ab, String addin, String catalog, GLogger logger) {
 		m_session = session;
@@ -74,14 +72,6 @@ public class JSONRules {
 		if (obj.containsKey("error")) {
 			String error = (String) obj.get("error");	
 			log(error);
-			return false;
-		}
-
-		String version = obj.containsKey("version") ? (String) obj.get("version") : "?";
-		if (!version.equalsIgnoreCase(VERSION)) {
-			log("Genesis can't process package. Please update Genesis to latest version and try again.");
-			log("Genesis JSON parser version: " + VERSION);
-			log("Package JSON version: " + version);
 			return false;
 		}
 
