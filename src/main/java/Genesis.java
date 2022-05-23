@@ -19,7 +19,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-05-18 12:45";
+		return "2022-05-23 12:45";
 	}
 
 	@Override
@@ -50,17 +50,8 @@ public class Genesis extends JavaServerAddinGenesis {
 			EventCatalogReport eventCatalogSend = new EventCatalogReport("CatalogSend", 600, true, m_logger);
 			eventCatalogSend.Catalog = m_catalog;
 			eventCatalogSend.Server = URLEncoder.encode(server, "UTF-8");
-			eventCatalogSend.Data = URLEncoder.encode("message from Genesis at " + new Date().toString(), "UTF-8");
+			eventCatalogSend.JavaAddinRoot = JAVA_ADDIN_ROOT;
 			this.eventsAdd(eventCatalogSend);
-			
-			EventExecute eventExecute = new EventExecute("Execute", 60, true, m_logger);
-			eventExecute.Session = this.m_session;
-			eventExecute.AB = this.m_ab;
-			eventExecute.JavaAddinName = this.getJavaAddinName();
-			eventExecute.Catalog = this.m_catalog;
-			eventExecute.Logger = this.m_logger;
-			this.eventsAdd(eventExecute);
-
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -117,7 +108,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			logMessage(addinName[i] + " : " + String.valueOf(status));
 		}
 	}
-
+	
 	private void install(String cmd) {
 		try {
 			// validate command

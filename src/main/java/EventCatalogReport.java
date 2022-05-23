@@ -1,13 +1,16 @@
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 
 import net.prominic.gja_v20220517.Event;
 import net.prominic.gja_v20220517.GLogger;
+import net.prominic.util.StringUtils;
 import net.prominic.utils.HTTP;
 
 public class EventCatalogReport extends Event {
+	public String JavaAddinRoot = null;
 	public String Catalog = null;
 	public String Server = null;
-	public String Data = null;
 	
 	public EventCatalogReport(String name, long seconds, boolean fireOnStart, GLogger logger) {
 		super(name, seconds, fireOnStart, logger);
@@ -15,10 +18,11 @@ public class EventCatalogReport extends Event {
 
 	@Override
 	public void run() {
-		System.out.print("Catalog Report");
-		
+		System.out.println("Report Installed App");
+
+		String[] app = getAllAddin();
 		String endpoint = Catalog + "/report?openAgent";
-		String data = String.format("server=%s&data=%s", Server, Data);
+		String data = String.format("server=%s&data=%s", Server, StringUtils.join(app, ";"));
 		
 		try {
 			HTTP.post(endpoint, data);
@@ -27,4 +31,15 @@ public class EventCatalogReport extends Event {
 		}
 	}
 
+	private String[] getAllAddin() {
+		File file = new File(JavaAddinRoot);
+		String[] directories = file.list(new FilenameFilter() {
+			@Override
+			public boolean accept(File current, String name) {
+				return new File(current, name).isDirectory();
+			}
+		});
+
+		return directories;
+	}
 }
