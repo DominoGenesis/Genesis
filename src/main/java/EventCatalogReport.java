@@ -1,9 +1,10 @@
 import java.io.File;
+
 import java.io.FilenameFilter;
 import java.io.IOException;
 
-import net.prominic.gja_v20220517.Event;
-import net.prominic.gja_v20220517.GLogger;
+import net.prominic.gja_v20220524.Event;
+import net.prominic.gja_v20220524.GLogger;
 import net.prominic.util.StringUtils;
 import net.prominic.utils.HTTP;
 
@@ -18,7 +19,7 @@ public class EventCatalogReport extends Event {
 
 	@Override
 	public void run() {
-		System.out.println("Report Installed App");
+		System.out.println(getClass().getName());
 
 		String[] app = getAllAddin();
 		String endpoint = Catalog + "/report?openAgent";

@@ -1,12 +1,13 @@
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Date;
 
 import lotus.domino.NotesException;
 import net.prominic.genesis.JSONRules;
-import net.prominic.gja_v20220517.JavaServerAddinGenesis;
+import net.prominic.gja_v20220524.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -19,7 +20,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-05-23 12:45";
+		return "2022-05-24 23:45";
 	}
 
 	@Override
@@ -90,6 +91,8 @@ public class Genesis extends JavaServerAddinGenesis {
 			showState();
 		} else if (cmd.startsWith("install")) {
 			install(cmd);
+		} else if (cmd.startsWith("update")) {
+			update(cmd);
 		} else {
 			logMessage("Command is not recognized (use -h or help to get details)");
 			return false;
@@ -105,11 +108,33 @@ public class Genesis extends JavaServerAddinGenesis {
 			String javaAddin = JAVA_ADDIN_ROOT + File.separator + addinName[i];
 
 			boolean status = isLive(javaAddin);
-			logMessage(addinName[i] + " : " + String.valueOf(status));
+			String version = this.getConfigValueString(addinName[i], "version");
+			logMessage(String.format("%s v%s : %b", addinName[i], version, status));
 		}
 	}
 	
-	private void install(String cmd) {
+	private String getConfigValueString(String javaAddin, String name) {
+		File f = new File(JAVA_ADDIN_ROOT + File.separator + javaAddin + File.separator + CONFIG_FILE_NAME);
+		System.out.println(JAVA_ADDIN_ROOT + File.separator + javaAddin + File.separator + CONFIG_FILE_NAME);
+		if (!f.exists()) return null;
+
+		String res = null;
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(f));
+			String st;
+			while ((st = br.readLine()) != null) {
+				if (st.startsWith(name + "=")) {
+					res = st.substring(st.indexOf("=")+1);
+				}
+			}
+			br.close();
+		}
+		catch (IOException e) {}
+
+		return res;
+	}
+	
+	private void update(String cmd) {
 		try {
 			// validate command
 			String[] parts = cmd.split("\\s+");
@@ -120,9 +145,18 @@ public class Genesis extends JavaServerAddinGenesis {
 			}
 
 			// get addin name and it's JSON
-			String app = parts[1];
-			String buf = HTTP.get(m_catalog + "/app?openagent&name=" + app).toString();
+			String id = parts[1];
+			String version = this.getConfigValueString(id, "version");
 
+			logMessage(version);
+
+			String buf = HTTP.get(m_catalog + "/package.update?openagent&id=" + id + "&v=" + version).toString();
+			if (buf.length() < 50) {
+				logMessage(buf);
+				logMessage("You run latest version");
+				return;
+			}
+			
 			// check number of parameters
 			int counter = 0;
 			for (int i = 0; i < 20; i++) {
@@ -143,8 +177,54 @@ public class Genesis extends JavaServerAddinGenesis {
 				buf = buf.replace(String.format("{%d}", i), parts[i + 2]);
 			}
 
-			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog,
-					this.m_logger);
+			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog, this.m_logger);
+			boolean res = rules.execute(buf);
+
+			logInstall(id, res, rules.getLogBuffer().toString());
+			m_logger.info(rules.getLogBuffer().toString());
+			
+			update(cmd);
+		} catch (IOException e) {
+			logMessage("Install command failed: " + e.getMessage());
+		}
+	}
+	
+	private void install(String cmd) {
+		try {
+			// validate command
+			String[] parts = cmd.split("\\s+");
+			if (parts.length < 2) {
+				logMessage("Command is not recognized (use -h or help to get details)");
+				logMessage("Install and update command should addin as a parameter");
+				return;
+			}
+
+			// get addin name and it's JSON
+			String app = parts[1];
+
+			String buf = HTTP.get(m_catalog + "/package?openagent&id=" + app).toString();
+			
+			// check number of parameters
+			int counter = 0;
+			for (int i = 0; i < 20; i++) {
+				if (buf.contains(String.format("{%d}", i))) {
+					counter++;
+				} else {
+					i = 20;
+				}
+			}
+			if (counter + 2 > parts.length) {
+				logMessage(String.format("This installation requires %d parameters", counter));
+				return;
+			}
+
+			// inject optional parameters
+			for (int i = 0; i < counter; i++) {
+				logMessage(String.format("Param ${%d} => %s", i, parts[i + 2]));
+				buf = buf.replace(String.format("{%d}", i), parts[i + 2]);
+			}
+
+			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog, this.m_logger);
 			boolean res = rules.execute(buf);
 
 			logInstall(app, res, rules.getLogBuffer().toString());

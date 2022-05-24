@@ -1,6 +1,7 @@
 package net.prominic.genesis;
 
 import java.io.File;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
@@ -17,8 +18,8 @@ import lotus.domino.Database;
 import lotus.domino.DocumentCollection;
 import lotus.domino.Document;
 import lotus.domino.NotesException;
-import net.prominic.gja_v20220517.GLogger;
-import net.prominic.gja_v20220517.ProgramConfig;
+import net.prominic.gja_v20220524.GLogger;
+import net.prominic.gja_v20220524.ProgramConfig;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 
@@ -29,7 +30,7 @@ public class JSONRules {
 	private String m_catalog;
 	private GLogger m_logger;
 	private StringBuffer m_logBuffer;
-	
+
 	public JSONRules(Session session, Database ab, String addin, String catalog, GLogger logger) {
 		m_session = session;
 		m_ab = ab;
@@ -67,7 +68,7 @@ public class JSONRules {
 	 */
 	private boolean execute(JSONObject obj) {
 		m_logBuffer = new StringBuffer();
-		
+
 		// if error
 		if (obj.containsKey("error")) {
 			String error = (String) obj.get("error");	
@@ -89,7 +90,7 @@ public class JSONRules {
 			JSONObject step = (JSONObject) steps.get(i);
 			parseStep(step);
 		}
-		
+
 		return true;
 	}
 
@@ -138,7 +139,7 @@ public class JSONRules {
 
 				log("Dependency detected: " + v);
 
-				StringBuffer appJSON = HTTP.get(m_catalog + "/app?openagent&name=" + v);
+				StringBuffer appJSON = HTTP.get(m_catalog + "/package?openagent&id=" + v);
 				JSONRules dependency = new JSONRules(this.m_session, this.m_ab, this.m_addin, this.m_catalog, this.m_logger);
 				dependency.execute(appJSON.toString());
 			}
@@ -174,12 +175,13 @@ public class JSONRules {
 
 				String from = (String) obj.get("from");
 				String to = (String) obj.get("to");
+				boolean replace = obj.containsKey("replace") && (Boolean)obj.get("replace");
 
 				if (to.indexOf("${directory}")>=0) {
 					to = to.replace("${directory}", directory);
 				};
 
-				saveFile(from, to);
+				saveFile(from, to, replace);
 			}
 		} catch (NotesException e) {
 			log(e);
@@ -188,13 +190,14 @@ public class JSONRules {
 		}
 	}
 
-	private void saveFile(String from, String to) throws IOException {
+	private void saveFile(String from, String to, boolean replace) throws IOException {
 		log("Download: " + from);
 		log("To: " + to);
+		log("Replace: " + String.valueOf(replace));
 
 		// check if file already exists (by default skip)
 		File file = new File(to);
-		if (file.exists()) {
+		if (file.exists() && !replace) {
 			log("> skip (already exists)");
 			return;
 		}
@@ -206,10 +209,20 @@ public class JSONRules {
 			dir.mkdirs();
 		}
 
+//		int extIndex = to.lastIndexOf(".");
+//		String toTmp = to.substring(0, extIndex) + ".tmp";
+
 		boolean res = HTTP.saveFile(new URL(from), to);
 		if (!res) {
 			log("> failed to download");
+			return;
 		}
+
+//		File toTmpFile = new File(toTmp);
+//		if (toTmpFile.isFile()) {
+//			toTmpFile.renameTo(new File(to));
+//			log("> renamed to:" + toTmp);
+//		}
 
 		log("> done");					
 	}
@@ -225,7 +238,7 @@ public class JSONRules {
 
 			String name = (String) obj.get("name");
 			String value = String.valueOf(obj.get("value"));
-			
+
 			boolean multivalue = obj.containsKey("multivalue") && (Boolean)obj.get("multivalue");
 			String sep = multivalue ? (String) obj.get("sep") : "";
 
@@ -271,7 +284,7 @@ public class JSONRules {
 			String action = (String) json.get("action");
 			String filePath = (String) json.get("filePath");
 			boolean sign = json.containsKey("sign") && (Boolean) json.get("sign");
-			
+
 			log(" > " + filePath);
 
 			if ("create".equalsIgnoreCase(action)) {
@@ -339,14 +352,14 @@ public class JSONRules {
 		log("- update document(s)");
 		JSONObject items = (JSONObject) json.get("items");
 		JSONObject search = (JSONObject) json.get("search");
-		
+
 		try {
 			String formula = (String) search.get("formula");
 			log("search (formula): " + formula);
-			
+
 			Long number = (Long) (search.containsKey("number") ? search.get("number") : 0);
 			log("number: " + number.toString());
-			
+
 			DocumentCollection col = database.search(formula, null, number.intValue());
 			if (col.getCount() == 0) return;
 
@@ -374,7 +387,7 @@ public class JSONRules {
 		}
 		doc.save();
 	}
-	
+
 	private Database createDatabaseFromTemplate(String filePath, String title, String templatePath) {
 		Database database = null;
 		try {
@@ -423,7 +436,7 @@ public class JSONRules {
 					log(replicaServer + "!!" + replicaPath + " - replica not found");
 					return null;
 				}
-				
+
 				database = replicaDb.createReplica(null, filePath);
 				log(database.getFilePath() + " - has been created");
 			}
@@ -433,7 +446,7 @@ public class JSONRules {
 
 		return database;
 	}
-	
+
 	public StringBuffer getLogBuffer() {
 		return m_logBuffer;
 	}
@@ -443,7 +456,7 @@ public class JSONRules {
 		m_logBuffer.append(e.getLocalizedMessage());
 		m_logBuffer.append(System.getProperty("line.separator"));
 	}
-	
+
 	private void log(Object o) {
 		System.out.println(o.toString());
 		m_logBuffer.append(o.toString());
