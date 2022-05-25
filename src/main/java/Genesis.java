@@ -109,13 +109,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			boolean status = isLive(javaAddin);
 			String version = this.getConfigValueString(addinName[i], "version");
-			logMessage(String.format("%s v%s : %b", addinName[i], version, status));
+			logMessage(String.format("%s (%s) : %b", addinName[i], version, status));
 		}
 	}
 	
 	private String getConfigValueString(String javaAddin, String name) {
 		File f = new File(JAVA_ADDIN_ROOT + File.separator + javaAddin + File.separator + CONFIG_FILE_NAME);
-		System.out.println(JAVA_ADDIN_ROOT + File.separator + javaAddin + File.separator + CONFIG_FILE_NAME);
 		if (!f.exists()) return null;
 
 		String res = null;

@@ -301,6 +301,10 @@ public class JSONRules {
 			}
 			else {
 				database = m_session.getDatabase(null, filePath);
+				if (json.containsKey("templatePath")) {
+					String templatePath = (String) json.get("templatePath");
+					refreshDesign(filePath, templatePath);
+				}
 			}
 
 			if (database == null) {
@@ -319,6 +323,21 @@ public class JSONRules {
 		}
 	}
 
+	/*
+	 * Refresh design of database
+	 */
+	private void refreshDesign(String filePath, String templatePath) {
+		try {
+			Database targetDb = m_session.getDatabase(null, filePath);
+			Database templateDb = m_session.getDatabase(null, templatePath);
+			
+			DominoUtils.refreshDesign(targetDb, templateDb);
+			
+		} catch (NotesException e) {
+			log(e);
+		}
+	}
+	
 	private void parseDocuments(Database database, JSONArray array) {
 		if (array == null) return;
 
