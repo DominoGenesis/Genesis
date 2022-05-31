@@ -126,8 +126,8 @@ public class JSONRules {
 		String[] genesisArr = this.JSON_VERSION.split("\\.");
 		
 		for (int i=0; i<=2; i++) {
-			log(jsonArr[i] + " =? " + genesisArr[i]);
-			if (Integer.parseInt(jsonArr[i]) < Integer.parseInt(genesisArr[i])) {
+			log(jsonArr[i] + " > " + genesisArr[i]);
+			if (Integer.parseInt(jsonArr[i]) > Integer.parseInt(genesisArr[i])) {
 				log("yay :(");
 				return false;
 			}
