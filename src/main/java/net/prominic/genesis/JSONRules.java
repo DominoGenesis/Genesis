@@ -119,16 +119,19 @@ public class JSONRules {
 	}
 
 	private boolean isValidVersionJSON(String versionjson) {
-		log("json version = " + versionjson);
-		log("json (genesis) version = " + this.JSON_VERSION);
-		
 		String[] jsonArr = versionjson.split("\\.");
 		String[] genesisArr = this.JSON_VERSION.split("\\.");
 		
 		for (int i=0; i<=2; i++) {
-			log(jsonArr[i] + " > " + genesisArr[i]);
-			if (Integer.parseInt(jsonArr[i]) > Integer.parseInt(genesisArr[i])) {
-				log("yay :(");
+			int part1 = Integer.parseInt(jsonArr[i]);
+			int part2 = Integer.parseInt(genesisArr[i]);
+			
+			if (part1 < part2) {
+				log(jsonArr[i] + " < " + genesisArr[i]);
+				i = 3;
+			}
+			else if(part1 > part2) {
+				log(jsonArr[i] + " > " + genesisArr[i]);
 				return false;
 			}
 		}
