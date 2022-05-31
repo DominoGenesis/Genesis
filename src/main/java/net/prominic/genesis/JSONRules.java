@@ -128,11 +128,12 @@ public class JSONRules {
 		for (int i=0; i<=2; i++) {
 			log(jsonArr[i] + " =? " + genesisArr[i]);
 			if (Integer.parseInt(jsonArr[i]) < Integer.parseInt(genesisArr[i])) {
+				log("yay :(");
 				return false;
 			}
 		}
 		
-		return false;
+		return true;
 	}
 
 	private void updateConfig(JSONObject config) {
