@@ -1,5 +1,6 @@
 package net.prominic.utils;
 
+import java.io.IOException;
 import lotus.domino.Database;
 import lotus.domino.Document;
 import lotus.domino.NoteCollection;
@@ -34,38 +35,6 @@ public class DominoUtils {
 			log("sign command failed: " + e.getMessage());
 		}
 	}
-	
-	/*
-	 * Refresh design of database
-	 */
-	public static void refreshDesign(Database targetDb, Database templateDb) {
-		try {
-			log("[Refresh Design] " + targetDb.getTitle() + " - started");
-			
-			Document targetDoc = targetDb.getDocumentByID("FFFF0010");
-			Document templateDoc = templateDb.getDocumentByID("FFFF0010");
-			
-			// set inherit design name
-			String targetTitle = targetDb.getTitle() + "\n" + "#2" + templateDb.getFileName();
-			targetDoc.replaceItemValue("$Title", targetTitle);
-			targetDoc.save();
-			targetDb.setTitle(targetTitle);
-			
-			// set master template name
-			String templateTitle = templateDb.getTitle() + "\n" + "#1" + templateDb.getFileName();
-			templateDoc.replaceItemValue("$Title", templateTitle);
-			templateDoc.save();
-			templateDb.setTitle(templateTitle);
-			
-			targetDb.getParent().sendConsoleCommand(null, "load design -f " + targetDb.getFilePath());
-			
-			log("[Refresh Design] " + targetDb.getTitle() + " - completed");
-		} catch (NotesException e) {
-			log("[Refresh Design] failed: " + e.getMessage());
-			e.printStackTrace();
-		}
-	}
-	
 
 	private static void log(String s) {
 		System.out.println(s);

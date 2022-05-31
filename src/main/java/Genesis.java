@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -20,7 +21,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-05-24 23:45";
+		return "2022-05-31 23:45";
 	}
 
 	@Override
@@ -105,11 +106,8 @@ public class Genesis extends JavaServerAddinGenesis {
 		String[] addinName = this.getAllAddin();
 
 		for (int i = 0; i < addinName.length; i++) {
-			String javaAddin = JAVA_ADDIN_ROOT + File.separator + addinName[i];
-
-			boolean status = isLive(javaAddin);
 			String version = this.getConfigValueString(addinName[i], "version");
-			logMessage(String.format("%s (%s) : %b", addinName[i], version, status));
+			logMessage(String.format("%s (%s)", addinName[i], version));
 		}
 	}
 	
@@ -151,7 +149,6 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			String buf = HTTP.get(m_catalog + "/package.update?openagent&id=" + id + "&v=" + version).toString();
 			if (buf.length() < 50) {
-				logMessage(buf);
 				logMessage("You run latest version");
 				return;
 			}
@@ -176,7 +173,8 @@ public class Genesis extends JavaServerAddinGenesis {
 				buf = buf.replace(String.format("{%d}", i), parts[i + 2]);
 			}
 
-			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog, this.m_logger);
+			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
+			JSONRules rules = new JSONRules(m_session, this.m_ab, id, this.m_catalog, configPath, this.m_logger);
 			boolean res = rules.execute(buf);
 
 			logInstall(id, res, rules.getLogBuffer().toString());
@@ -199,9 +197,9 @@ public class Genesis extends JavaServerAddinGenesis {
 			}
 
 			// get addin name and it's JSON
-			String app = parts[1];
+			String id = parts[1];
 
-			String buf = HTTP.get(m_catalog + "/package?openagent&id=" + app).toString();
+			String buf = HTTP.get(m_catalog + "/package?openagent&id=" + id).toString();
 			
 			// check number of parameters
 			int counter = 0;
@@ -223,10 +221,11 @@ public class Genesis extends JavaServerAddinGenesis {
 				buf = buf.replace(String.format("{%d}", i), parts[i + 2]);
 			}
 
-			JSONRules rules = new JSONRules(m_session, this.m_ab, this.getJavaAddinName(), this.m_catalog, this.m_logger);
+			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
+			JSONRules rules = new JSONRules(m_session, this.m_ab, id, this.m_catalog, configPath, this.m_logger);
 			boolean res = rules.execute(buf);
 
-			logInstall(app, res, rules.getLogBuffer().toString());
+			logInstall(id, res, rules.getLogBuffer().toString());
 			m_logger.info(rules.getLogBuffer().toString());
 
 		} catch (IOException e) {

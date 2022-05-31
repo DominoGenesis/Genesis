@@ -1,10 +1,12 @@
 package net.prominic.genesis;
 
+import java.io.BufferedReader;
 import java.io.File;
-
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,6 +22,7 @@ import lotus.domino.Document;
 import lotus.domino.NotesException;
 import net.prominic.gja_v20220524.GLogger;
 import net.prominic.gja_v20220524.ProgramConfig;
+import net.prominic.util.FileUtils;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 
@@ -28,14 +31,18 @@ public class JSONRules {
 	private Database m_ab;
 	private String m_addin;
 	private String m_catalog;
+	private String m_config;
 	private GLogger m_logger;
 	private StringBuffer m_logBuffer;
 
-	public JSONRules(Session session, Database ab, String addin, String catalog, GLogger logger) {
+	private final String JSON_VERSION = "1.0.0";
+
+	public JSONRules(Session session, Database ab, String addin, String catalog, String config, GLogger logger) {
 		m_session = session;
 		m_ab = ab;
 		m_addin = addin;
 		m_catalog = catalog;
+		m_config = config;
 		m_logger = logger;
 	}
 
@@ -69,6 +76,18 @@ public class JSONRules {
 	private boolean execute(JSONObject obj) {
 		m_logBuffer = new StringBuffer();
 
+		// check json version
+		if (obj.containsKey("versionjson")) {
+			String versionjson = (String) obj.get("versionjson");	
+			boolean valid = isValidVersionJSON(versionjson);
+			if (!valid) {
+				log("Genesis in outdated (can't process such JSON)");
+				log("JSON version: " + versionjson);
+				log("Genesis supports: " + this.JSON_VERSION);
+				return false;
+			};
+		}
+		
 		// if error
 		if (obj.containsKey("error")) {
 			String error = (String) obj.get("error");	
@@ -80,6 +99,11 @@ public class JSONRules {
 		if (steps.size() == 0) {
 			log("Invalid JSON structure (no steps defined)");
 			return false;
+		}
+
+		if (obj.containsKey("config")) {
+			JSONObject config = (JSONObject) obj.get("config");
+			updateConfig(config);
 		}
 
 		if (obj.containsKey("title")) {
@@ -94,10 +118,78 @@ public class JSONRules {
 		return true;
 	}
 
+	private boolean isValidVersionJSON(String versionjson) {
+		log("json version = " + versionjson);
+		log("json (genesis) version = " + this.JSON_VERSION);
+		
+		String[] jsonArr = versionjson.split("\\.");
+		String[] genesisArr = this.JSON_VERSION.split("\\.");
+		
+		for (int i=0; i<=2; i++) {
+			log(jsonArr[i] + " =? " + genesisArr[i]);
+			if (Integer.parseInt(jsonArr[i]) < Integer.parseInt(genesisArr[i])) {
+				return false;
+			}
+		}
+		
+		return false;
+	}
+
+	private void updateConfig(JSONObject config) {
+		try {
+			Map<String, String> params = new HashMap<String, String>();
+
+			// parse file-config
+			File f = new File(this.m_config);
+			if (f.exists()) {
+				BufferedReader br = new BufferedReader(new FileReader(f));
+				String sCurrentLine;
+				while ((sCurrentLine = br.readLine()) != null) {
+					if (!sCurrentLine.isEmpty()) {
+						int indexOf = sCurrentLine.indexOf("=");
+						if (indexOf>0) {
+							String name = sCurrentLine.substring(0, indexOf);
+							String value = sCurrentLine.substring(indexOf+1);
+							params.put(name, value);
+						}
+					}
+				}
+
+				br.close();
+			}
+			else {
+				f.getParentFile().mkdirs();
+			}
+
+			// parse json-config
+			for(Object key : config.keySet()) {
+				String name = (String) key;
+				String value = (String) config.get(key);
+				params.put(name, value);
+			}
+
+			// update file-config
+			String res = "";
+			for (Map.Entry<String,String> entry : params.entrySet()) {
+				res += entry.getKey() +"=" + entry.getValue();
+				res += "\n";
+			}
+
+			FileUtils.writeFile(f, res);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	/*
 	 * Parse a step
 	 */
 	private void parseStep(JSONObject step) {
+		if (step.containsKey("access")) {
+			boolean access = doAccess((JSONObject)step.get("access"));
+			if (!access) return;
+		}
+		
 		if (step.containsKey("title")) {
 			log(step.get("title"));
 		}
@@ -111,6 +203,9 @@ public class JSONRules {
 		else if(step.containsKey("notesINI")) {
 			doNotesINI((JSONArray) step.get("notesINI"));
 		}
+		else if(step.containsKey("commands")) {
+			doCommands((JSONArray) step.get("commands"));
+		}
 		else if(step.containsKey("databases")) {
 			doDatabases((JSONArray) step.get("databases"));
 		}
@@ -120,6 +215,40 @@ public class JSONRules {
 		else if(step.containsKey("programConfig")) {
 			programConfig((Integer) step.get("programConfig"));
 		}
+	}
+
+	private void doCommands(JSONArray list) {
+		log("commands");
+		if (list == null || list.size() == 0) return;
+
+		try {
+			for(int i=0; i<list.size(); i++) {
+				String v = (String) list.get(i);
+				log(v);
+				@SuppressWarnings("unused")
+				Process proc = Runtime.getRuntime().exec(v);
+			}
+		} catch (IOException e) {
+			log(e);
+		}
+	}
+
+	private boolean doAccess(JSONObject jsonObject) {
+		boolean access = true;
+		
+		if (jsonObject.containsKey("os")) {
+			String osName = System.getProperty("os.name").toLowerCase();
+			if (osName.contains("win")) {
+				osName = "win";
+			}
+			else {
+				osName = "unix";
+			}
+			JSONArray osList = (JSONArray) jsonObject.get("os");
+			access = osList.contains(osName);
+		}
+
+		return access;
 	}
 
 	/*
@@ -140,7 +269,7 @@ public class JSONRules {
 				log("Dependency detected: " + v);
 
 				StringBuffer appJSON = HTTP.get(m_catalog + "/package?openagent&id=" + v);
-				JSONRules dependency = new JSONRules(this.m_session, this.m_ab, this.m_addin, this.m_catalog, this.m_logger);
+				JSONRules dependency = new JSONRules(this.m_session, this.m_ab, this.m_addin, this.m_catalog, this.m_config, this.m_logger);
 				dependency.execute(appJSON.toString());
 			}
 		} catch (IOException e) {
@@ -182,6 +311,7 @@ public class JSONRules {
 				};
 
 				saveFile(from, to, replace);
+				log("> " + to);
 			}
 		} catch (NotesException e) {
 			log(e);
@@ -191,14 +321,9 @@ public class JSONRules {
 	}
 
 	private void saveFile(String from, String to, boolean replace) throws IOException {
-		log("Download: " + from);
-		log("To: " + to);
-		log("Replace: " + String.valueOf(replace));
-
 		// check if file already exists (by default skip)
 		File file = new File(to);
 		if (file.exists() && !replace) {
-			log("> skip (already exists)");
 			return;
 		}
 
@@ -209,22 +334,11 @@ public class JSONRules {
 			dir.mkdirs();
 		}
 
-//		int extIndex = to.lastIndexOf(".");
-//		String toTmp = to.substring(0, extIndex) + ".tmp";
-
 		boolean res = HTTP.saveFile(new URL(from), to);
 		if (!res) {
 			log("> failed to download");
 			return;
 		}
-
-//		File toTmpFile = new File(toTmp);
-//		if (toTmpFile.isFile()) {
-//			toTmpFile.renameTo(new File(to));
-//			log("> renamed to:" + toTmp);
-//		}
-
-		log("> done");					
 	}
 
 	/*
@@ -266,7 +380,6 @@ public class JSONRules {
 		}
 
 		m_session.setEnvironmentVar(name, value, true);	
-		log(name + " = " + value);
 	}
 
 	private void doDatabases(JSONArray list) {
@@ -285,8 +398,6 @@ public class JSONRules {
 			String filePath = (String) json.get("filePath");
 			boolean sign = json.containsKey("sign") && (Boolean) json.get("sign");
 
-			log(" > " + filePath);
-
 			if ("create".equalsIgnoreCase(action)) {
 				if (json.containsKey("templatePath")) {
 					String title = (String) json.get("title");
@@ -301,10 +412,6 @@ public class JSONRules {
 			}
 			else {
 				database = m_session.getDatabase(null, filePath);
-				if (json.containsKey("templatePath")) {
-					String templatePath = (String) json.get("templatePath");
-					refreshDesign(filePath, templatePath);
-				}
 			}
 
 			if (database == null) {
@@ -323,21 +430,6 @@ public class JSONRules {
 		}
 	}
 
-	/*
-	 * Refresh design of database
-	 */
-	private void refreshDesign(String filePath, String templatePath) {
-		try {
-			Database targetDb = m_session.getDatabase(null, filePath);
-			Database templateDb = m_session.getDatabase(null, templatePath);
-			
-			DominoUtils.refreshDesign(targetDb, templateDb);
-			
-		} catch (NotesException e) {
-			log(e);
-		}
-	}
-	
 	private void parseDocuments(Database database, JSONArray array) {
 		if (array == null) return;
 
@@ -356,7 +448,6 @@ public class JSONRules {
 	}
 
 	private void createDocuments(Database database, JSONObject json, boolean computeWithForm) {
-		log("- create document(s)");
 		JSONObject items = (JSONObject) json.get("items");
 		Document doc = null;
 		try {
@@ -368,21 +459,17 @@ public class JSONRules {
 	}
 
 	private void updateDocuments(Database database, JSONObject json, boolean computeWithForm) {
-		log("- update document(s)");
 		JSONObject items = (JSONObject) json.get("items");
 		JSONObject search = (JSONObject) json.get("search");
 
 		try {
 			String formula = (String) search.get("formula");
-			log("search (formula): " + formula);
 
 			Long number = (Long) (search.containsKey("number") ? search.get("number") : 0);
-			log("number: " + number.toString());
 
 			DocumentCollection col = database.search(formula, null, number.intValue());
 			if (col.getCount() == 0) return;
 
-			log("found doc");
 			Document doc = col.getFirstDocument();
 			updateDocument(doc, items, computeWithForm);
 		} catch (NotesException e) {
@@ -396,8 +483,6 @@ public class JSONRules {
 		for (Map.Entry<String, Object> entry : entries) {
 			String name = entry.getKey();
 			String value = (String) entry.getValue();
-			log("name:" + name);
-			log("value:" + value);
 			doc.replaceItemValue(name, this.m_session.evaluate(value));
 		}
 
@@ -426,15 +511,9 @@ public class JSONRules {
 				log(database.getFilePath() + " - has been created");
 			}
 
-			log(database.getFilePath() + " - exists/created");
-			if (database.isOpen()) {
-				log("> it is opened");
-			}
-			else {
-				log("> it is NOT opened");	
+			if (!database.isOpen()) {
 				database.open();
 			}
-			log(database.getTitle());
 		} catch (NotesException e) {
 			log(e);
 		}
