@@ -1,14 +1,12 @@
 import java.io.BufferedReader;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-
 import lotus.domino.NotesException;
 import net.prominic.genesis.JSONRules;
-import net.prominic.gja_v20220524.JavaServerAddinGenesis;
+import net.prominic.gja_v20220601.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -35,6 +33,8 @@ public class Genesis extends JavaServerAddinGenesis {
 			m_catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 		}
 
+		logMessage(m_catalog);
+		
 		// check if connection could be established
 		if (!check()) {
 			logWarning("connection (*FAILED*) with: " + m_catalog);
@@ -47,7 +47,8 @@ public class Genesis extends JavaServerAddinGenesis {
 		} catch (NotesException e) {
 			server = "n/a";
 		}
-
+		logMessage(server);
+		
 		try {
 			EventCatalogReport eventCatalogSend = new EventCatalogReport("CatalogSend", 600, true, m_logger);
 			eventCatalogSend.Catalog = m_catalog;
