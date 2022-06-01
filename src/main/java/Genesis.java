@@ -33,8 +33,6 @@ public class Genesis extends JavaServerAddinGenesis {
 			m_catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 		}
 
-		logMessage(m_catalog);
-		
 		// check if connection could be established
 		if (!check()) {
 			logWarning("connection (*FAILED*) with: " + m_catalog);
@@ -47,7 +45,6 @@ public class Genesis extends JavaServerAddinGenesis {
 		} catch (NotesException e) {
 			server = "n/a";
 		}
-		logMessage(server);
 		
 		try {
 			EventCatalogReport eventCatalogSend = new EventCatalogReport("CatalogSend", 600, true, m_logger);

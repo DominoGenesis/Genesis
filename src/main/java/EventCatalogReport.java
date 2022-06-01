@@ -17,8 +17,6 @@ public class EventCatalogReport extends Event {
 
 	@Override
 	public void run() {
-		System.out.println(getClass().getName());
-
 		String[] app = getAllAddin();
 		String endpoint = Catalog + "/report?openAgent";
 		String data = String.format("server=%s&data=%s", Server, StringUtils.join(app, ";"));
