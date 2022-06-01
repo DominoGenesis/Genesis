@@ -21,7 +21,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-05-31 23:45";
+		return "2022-06-01 15:45";
 	}
 
 	@Override
@@ -176,6 +176,10 @@ public class Genesis extends JavaServerAddinGenesis {
 			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
 			JSONRules rules = new JSONRules(m_session, this.m_ab, id, this.m_catalog, configPath, this.m_logger);
 			boolean res = rules.execute(buf);
+			if (!res) {
+				logMessage("The package could not be executed");
+				return;
+			}
 
 			logInstall(id, res, rules.getLogBuffer().toString());
 			m_logger.info(rules.getLogBuffer().toString());

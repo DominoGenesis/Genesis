@@ -222,7 +222,6 @@ public class JSONRules {
 	}
 
 	private void doCommands(JSONArray list) {
-		log("commands");
 		if (list == null || list.size() == 0) return;
 
 		try {
