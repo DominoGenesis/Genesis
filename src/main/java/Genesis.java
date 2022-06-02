@@ -1,12 +1,12 @@
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+
 import lotus.domino.NotesException;
 import net.prominic.genesis.JSONRules;
-import net.prominic.gja_v20220601.JavaServerAddinGenesis;
+import net.prominic.gja_v20220602.GConfig;
+import net.prominic.gja_v20220602.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -19,7 +19,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-06-01 15:45";
+		return "2022-06-02 15:45";
 	}
 
 	@Override
@@ -37,6 +37,10 @@ public class Genesis extends JavaServerAddinGenesis {
 		if (!check()) {
 			logWarning("connection (*FAILED*) with: " + m_catalog);
 		}
+		
+		// Update program documents
+		ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args, m_logger);
+		pc.setState(m_ab, ProgramConfig.LOAD);		// set program documents in LOAD state
 
 		// event to read instruction from catalog
 		String server;
@@ -104,29 +108,9 @@ public class Genesis extends JavaServerAddinGenesis {
 		String[] addinName = this.getAllAddin();
 
 		for (int i = 0; i < addinName.length; i++) {
-			String version = this.getConfigValueString(addinName[i], "version");
+			String version = GConfig.get(addinName[i], "version");
 			logMessage(String.format("%s (%s)", addinName[i], version));
 		}
-	}
-	
-	private String getConfigValueString(String javaAddin, String name) {
-		File f = new File(JAVA_ADDIN_ROOT + File.separator + javaAddin + File.separator + CONFIG_FILE_NAME);
-		if (!f.exists()) return null;
-
-		String res = null;
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(f));
-			String st;
-			while ((st = br.readLine()) != null) {
-				if (st.startsWith(name + "=")) {
-					res = st.substring(st.indexOf("=")+1);
-				}
-			}
-			br.close();
-		}
-		catch (IOException e) {}
-
-		return res;
 	}
 	
 	private void update(String cmd) {
@@ -141,8 +125,8 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			// get addin name and it's JSON
 			String id = parts[1];
-			String version = this.getConfigValueString(id, "version");
-
+			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
+			String version = GConfig.get(configPath, "version");
 			logMessage(version);
 
 			String buf = HTTP.get(m_catalog + "/package.update?openagent&id=" + id + "&v=" + version).toString();
@@ -171,7 +155,6 @@ public class Genesis extends JavaServerAddinGenesis {
 				buf = buf.replace(String.format("{%d}", i), parts[i + 2]);
 			}
 
-			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
 			JSONRules rules = new JSONRules(m_session, this.m_ab, id, this.m_catalog, configPath, this.m_logger);
 			boolean res = rules.execute(buf);
 			if (!res) {

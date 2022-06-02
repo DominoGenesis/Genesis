@@ -1,12 +1,9 @@
 package net.prominic.genesis;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,14 +12,13 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import lotus.domino.Session;
 import lotus.domino.Database;
-import lotus.domino.DocumentCollection;
 import lotus.domino.Document;
+import lotus.domino.DocumentCollection;
 import lotus.domino.NotesException;
-import net.prominic.gja_v20220601.GLogger;
-import net.prominic.gja_v20220601.ProgramConfig;
-import net.prominic.util.FileUtils;
+import lotus.domino.Session;
+import net.prominic.gja_v20220602.GConfig;
+import net.prominic.gja_v20220602.GLogger;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 
@@ -87,7 +83,7 @@ public class JSONRules {
 				return false;
 			};
 		}
-		
+
 		// if error
 		if (obj.containsKey("error")) {
 			String error = (String) obj.get("error");	
@@ -121,11 +117,11 @@ public class JSONRules {
 	private boolean isValidVersionJSON(String versionjson) {
 		String[] jsonArr = versionjson.split("\\.");
 		String[] genesisArr = this.JSON_VERSION.split("\\.");
-		
+
 		for (int i=0; i<=2; i++) {
 			int part1 = Integer.parseInt(jsonArr[i]);
 			int part2 = Integer.parseInt(genesisArr[i]);
-			
+
 			if (part1 < part2) {
 				log(jsonArr[i] + " < " + genesisArr[i]);
 				i = 3;
@@ -135,53 +131,21 @@ public class JSONRules {
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
 
 	private void updateConfig(JSONObject config) {
-		try {
-			Map<String, String> params = new HashMap<String, String>();
-
-			// parse file-config
-			File f = new File(this.m_config);
-			if (f.exists()) {
-				BufferedReader br = new BufferedReader(new FileReader(f));
-				String sCurrentLine;
-				while ((sCurrentLine = br.readLine()) != null) {
-					if (!sCurrentLine.isEmpty()) {
-						int indexOf = sCurrentLine.indexOf("=");
-						if (indexOf>0) {
-							String name = sCurrentLine.substring(0, indexOf);
-							String value = sCurrentLine.substring(indexOf+1);
-							params.put(name, value);
-						}
-					}
-				}
-
-				br.close();
-			}
-			else {
-				f.getParentFile().mkdirs();
-			}
-
-			// parse json-config
-			for(Object key : config.keySet()) {
-				String name = (String) key;
-				String value = (String) config.get(key);
-				params.put(name, value);
-			}
-
-			// update file-config
-			String res = "";
-			for (Map.Entry<String,String> entry : params.entrySet()) {
-				res += entry.getKey() +"=" + entry.getValue();
-				res += "\n";
-			}
-
-			FileUtils.writeFile(f, res);
-		} catch (IOException e) {
-			e.printStackTrace();
+		File f = new File(this.m_config);
+		File dir = new File(f.getParent());
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		
+		for(Object key : config.keySet()) {
+			String name = (String) key;
+			String value = (String) config.get(key);
+			GConfig.set(this.m_config, name, value);
 		}
 	}
 
@@ -189,11 +153,11 @@ public class JSONRules {
 	 * Parse a step
 	 */
 	private void parseStep(JSONObject step) {
-		if (step.containsKey("access")) {
-			boolean access = doAccess((JSONObject)step.get("access"));
+		if (step.containsKey("runif")) {
+			boolean access = doRunIf((JSONObject)step.get("runif"));
 			if (!access) return;
 		}
-		
+
 		if (step.containsKey("title")) {
 			log(step.get("title"));
 		}
@@ -207,8 +171,8 @@ public class JSONRules {
 		else if(step.containsKey("notesINI")) {
 			doNotesINI((JSONArray) step.get("notesINI"));
 		}
-		else if(step.containsKey("commands")) {
-			doCommands((JSONArray) step.get("commands"));
+		else if(step.containsKey("updatedesign")) {
+			doUpdateDesign((JSONArray) step.get("updatedesign"));
 		}
 		else if(step.containsKey("databases")) {
 			doDatabases((JSONArray) step.get("databases"));
@@ -216,29 +180,34 @@ public class JSONRules {
 		else if(step.containsKey("messages")) {
 			doMessages((JSONArray) step.get("messages"));
 		}
-		else if(step.containsKey("programConfig")) {
-			programConfig((Integer) step.get("programConfig"));
-		}
 	}
 
-	private void doCommands(JSONArray list) {
+	private void doUpdateDesign(JSONArray list) {
 		if (list == null || list.size() == 0) return;
 
 		try {
 			for(int i=0; i<list.size(); i++) {
-				String v = (String) list.get(i);
-				log(v);
+				JSONObject obj = (JSONObject) list.get(i);
+				String convert = isWindows() ? "nconvert" : "convert";
+				String target = (String) obj.get("target");
+				String template = (String) obj.get("template");
+				String cmd = String.format("%s -d %s * %s", convert, target, template);
 				@SuppressWarnings("unused")
-				Process proc = Runtime.getRuntime().exec(v);
+				Process proc = Runtime.getRuntime().exec(cmd);
 			}
 		} catch (IOException e) {
 			log(e);
 		}
 	}
 
-	private boolean doAccess(JSONObject jsonObject) {
+	private boolean isWindows() {
+		String osName = System.getProperty("os.name").toLowerCase();
+		return osName.contains("win");
+	}
+
+	private boolean doRunIf(JSONObject jsonObject) {
 		boolean access = true;
-		
+
 		if (jsonObject.containsKey("os")) {
 			String osName = System.getProperty("os.name").toLowerCase();
 			if (osName.contains("win")) {
@@ -252,14 +221,6 @@ public class JSONRules {
 		}
 
 		return access;
-	}
-
-	/*
-	 * Used to setup program documents to load addin
-	 */
-	private void programConfig(int state) {
-		ProgramConfig pc = new ProgramConfig(this.m_addin, null, m_logger);
-		pc.setState(m_ab, state);		// set program documents in LOAD state
 	}
 
 	private void doDependencies(JSONArray list) {

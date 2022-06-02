@@ -1,6 +1,5 @@
 package net.prominic.utils;
 
-import java.io.IOException;
 import lotus.domino.Database;
 import lotus.domino.Document;
 import lotus.domino.NoteCollection;
