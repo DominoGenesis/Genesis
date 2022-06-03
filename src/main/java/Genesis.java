@@ -14,12 +14,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.8";
+		return "0.6.9";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-06-02 15:45";
+		return "2022-06-03 18:45";
 	}
 
 	@Override
@@ -51,11 +51,18 @@ public class Genesis extends JavaServerAddinGenesis {
 		}
 		
 		try {
-			EventCatalogReport eventCatalogSend = new EventCatalogReport("CatalogSend", 600, true, m_logger);
+			EventCatalogReport eventCatalogSend = new EventCatalogReport("CatalogSend", 3600, true, m_logger);
 			eventCatalogSend.Catalog = m_catalog;
 			eventCatalogSend.Server = URLEncoder.encode(server, "UTF-8");
 			eventCatalogSend.JavaAddinRoot = JAVA_ADDIN_ROOT;
+			eventCatalogSend.JavaAddinConfig= CONFIG_FILE_NAME; 
 			this.eventsAdd(eventCatalogSend);
+			
+			EventUpdate eventUpdate = new EventUpdate("Update", 7200, true, m_logger);
+			eventUpdate.Catalog = m_catalog;
+			eventUpdate.ConfigFilePath = this.m_javaAddinConfig; 
+			eventUpdate.CommandFilePath = this.m_javaAddinCommand;
+			this.eventsAdd(eventUpdate);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -67,7 +74,7 @@ public class Genesis extends JavaServerAddinGenesis {
 	 * test connection with Domino App Catalog (dac.nsf)
 	 */
 	private boolean check() {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		try {
 			String url = m_catalog.concat("/check?openagent");
 			buf = HTTP.get(url);
@@ -162,8 +169,8 @@ public class Genesis extends JavaServerAddinGenesis {
 				return;
 			}
 
-			logInstall(id, res, rules.getLogBuffer().toString());
-			m_logger.info(rules.getLogBuffer().toString());
+			logInstall(id, res, rules.getLogData().toString());
+			m_logger.info(rules.getLogData().toString());
 			
 			update(cmd);
 		} catch (IOException e) {
@@ -210,8 +217,8 @@ public class Genesis extends JavaServerAddinGenesis {
 			JSONRules rules = new JSONRules(m_session, this.m_ab, id, this.m_catalog, configPath, this.m_logger);
 			boolean res = rules.execute(buf);
 
-			logInstall(id, res, rules.getLogBuffer().toString());
-			m_logger.info(rules.getLogBuffer().toString());
+			logInstall(id, res, rules.getLogData().toString());
+			m_logger.info(rules.getLogData().toString());
 
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
@@ -226,8 +233,8 @@ public class Genesis extends JavaServerAddinGenesis {
 			console = URLEncoder.encode(console, "UTF-8");
 
 			String endpoint = m_catalog + "/log?openAgent";
-			StringBuffer res = HTTP.post(endpoint, "&server=" + server + "&app=" + app
-					+ "&status=" + (status ? "1" : "") + "&console=" + console);
+			String data = String.format("&server=%s&app=%s&status=%s&console=%s", server, app, (status ? "1" : ""), console);
+			StringBuilder res = HTTP.post(endpoint, data);
 
 			return res.toString().equalsIgnoreCase("OK");
 		} catch (IOException e) {
@@ -244,7 +251,7 @@ public class Genesis extends JavaServerAddinGenesis {
 	 */
 	private void showList() {
 		try {
-			StringBuffer list = HTTP.get(m_catalog.concat("/list?openagent"));
+			StringBuilder list = HTTP.get(m_catalog.concat("/list?openagent"));
 			String[] listArr = list.toString().split("\\|");
 			logMessage("*** List of App registered in Genesis Catalog ***");
 			for (int i = 0; i < listArr.length; i++) {

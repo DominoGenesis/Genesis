@@ -15,7 +15,7 @@ import java.nio.channels.ReadableByteChannel;
 import javax.net.ssl.HttpsURLConnection;
 
 public class HTTP {
-	public static StringBuffer post(String endpoint, String data) throws IOException {
+	public static StringBuilder post(String endpoint, String data) throws IOException {
 		HttpURLConnection con = getConnection(endpoint);
 
 		con.setDoOutput(true);
@@ -26,7 +26,7 @@ public class HTTP {
 		return response(con);
 	}
 
-	public static StringBuffer get(String endpoint) throws IOException {
+	public static StringBuilder get(String endpoint) throws IOException {
 		HttpURLConnection con = getConnection(endpoint);
 
 		con.setRequestMethod("GET");
@@ -54,7 +54,7 @@ public class HTTP {
 		return con;
 	}
 
-	private static StringBuffer response(HttpURLConnection con) throws IOException {
+	private static StringBuilder response(HttpURLConnection con) throws IOException {
 		// handle error response code it occurs
 		int responseCode = con.getResponseCode();
 		InputStream inputStream;
@@ -66,7 +66,7 @@ public class HTTP {
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
 
-		StringBuffer response = new StringBuffer();
+		StringBuilder response = new StringBuilder();
 		String inputLine;
 		while ((inputLine = in.readLine()) != null) {
 			response.append(inputLine);

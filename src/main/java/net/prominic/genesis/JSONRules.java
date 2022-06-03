@@ -29,7 +29,7 @@ public class JSONRules {
 	private String m_catalog;
 	private String m_config;
 	private GLogger m_logger;
-	private StringBuffer m_logBuffer;
+	private StringBuilder m_logBuilder;
 
 	private final String JSON_VERSION = "1.0.0";
 
@@ -70,7 +70,7 @@ public class JSONRules {
 	 * Exectute JSON
 	 */
 	private boolean execute(JSONObject obj) {
-		m_logBuffer = new StringBuffer();
+		m_logBuilder = new StringBuilder();
 
 		// check json version
 		if (obj.containsKey("versionjson")) {
@@ -232,7 +232,7 @@ public class JSONRules {
 
 				log("Dependency detected: " + v);
 
-				StringBuffer appJSON = HTTP.get(m_catalog + "/package?openagent&id=" + v);
+				StringBuilder appJSON = HTTP.get(m_catalog + "/package?openagent&id=" + v);
 				JSONRules dependency = new JSONRules(this.m_session, this.m_ab, this.m_addin, this.m_catalog, this.m_config, this.m_logger);
 				dependency.execute(appJSON.toString());
 			}
@@ -509,20 +509,20 @@ public class JSONRules {
 		return database;
 	}
 
-	public StringBuffer getLogBuffer() {
-		return m_logBuffer;
+	public StringBuilder getLogData() {
+		return m_logBuilder;
 	}
 
 	private void log(Exception e) {
 		e.printStackTrace();
-		m_logBuffer.append(e.getLocalizedMessage());
-		m_logBuffer.append(System.getProperty("line.separator"));
+		m_logBuilder.append(e.getLocalizedMessage());
+		m_logBuilder.append(System.getProperty("line.separator"));
 	}
 
 	private void log(Object o) {
 		System.out.println(o.toString());
-		m_logBuffer.append(o.toString());
-		m_logBuffer.append(System.getProperty("line.separator"));
+		m_logBuilder.append(o.toString());
+		m_logBuilder.append(System.getProperty("line.separator"));
 	}
 
 }
