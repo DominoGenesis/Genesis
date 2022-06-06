@@ -149,7 +149,6 @@ public class Genesis extends JavaServerAddinGenesis {
 			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
 			String commandPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + COMMAND_FILE_NAME;
 			String version = GConfig.get(configPath, "version");
-			logMessage(version);
 
 			String buf = HTTP.get(m_catalog + "/package.update?openagent&id=" + id + "&v=" + version).toString();
 			if (buf.length() < 50) {
@@ -293,6 +292,11 @@ public class Genesis extends JavaServerAddinGenesis {
 	 */
 	protected void showInfoExt() {
 		logMessage("catalog      " + this.m_catalog);
+	}
+	
+	protected void termBeforeAB() {
+		ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args, m_logger);
+		pc.setState(m_ab, ProgramConfig.UNLOAD);		// set program documents in UNLOAD state
 	}
 
 }

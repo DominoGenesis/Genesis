@@ -23,18 +23,15 @@ public class EventUpdate extends Event {
 			// get addin name and it's JSON
 			String addinID = "Genesis";
 			String version = GConfig.get(ConfigFilePath, "version");
-			System.out.println(version);
 
 			String endpoint = String.format("%s/package.update?openagent&id=%s&v=%s", Catalog, addinID, version);
-			System.out.println(endpoint);
 			String buf = HTTP.get(endpoint).toString();
-			System.out.println(buf.length());
 			if (buf.length() < 50) {
 				return;
 			}
-			
+
+			System.out.println("New version of Genesis is detected. Update process has started");
 			FileUtils.writeFile(new File(CommandFilePath), "update Genesis");
-			System.out.println("set command to update Genesis");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

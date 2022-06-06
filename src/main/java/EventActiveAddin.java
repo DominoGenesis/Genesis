@@ -35,13 +35,10 @@ public class EventActiveAddin extends Event {
 					String addinActive = GConfig.get(addinConfigPath, "active");
 					String runjava = GConfig.get(addinConfigPath, "runjava");
 
-					System.out.println("addinActive="+ addinActive);
-					System.out.println("isLive(addinLivePath)="+ String.valueOf(isLive(addinLivePath)));
 					if ("1".equals(addinActive) && !isLive(addinLivePath)) {
 						String runjavaTask = inWindows ? "nrunjava" : "runjava";
 
 						String cmd = String.format("%s %s", runjavaTask, runjava);
-						System.out.println("cmd="+ cmd);
 						
 						@SuppressWarnings("unused")
 						Process proc = Runtime.getRuntime().exec(cmd);
