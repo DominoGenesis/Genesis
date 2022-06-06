@@ -12,6 +12,14 @@ import net.prominic.utils.HTTP;
 public class Genesis extends JavaServerAddinGenesis {
 	private String m_catalog = "";
 
+	public Genesis(String[] args) {
+		super(args);
+	}
+
+	public Genesis() {
+		super();
+	}
+	
 	@Override
 	protected String getJavaAddinVersion() {
 		return "0.6.9";
@@ -55,14 +63,20 @@ public class Genesis extends JavaServerAddinGenesis {
 			eventCatalogSend.Catalog = m_catalog;
 			eventCatalogSend.Server = URLEncoder.encode(server, "UTF-8");
 			eventCatalogSend.JavaAddinRoot = JAVA_ADDIN_ROOT;
-			eventCatalogSend.JavaAddinConfig= CONFIG_FILE_NAME; 
+			eventCatalogSend.JavaAddinConfig = CONFIG_FILE_NAME; 
 			this.eventsAdd(eventCatalogSend);
+			
+			EventActiveAddin eventActiveAddin = new EventActiveAddin("Active Addin", 7200, true, m_logger);
+			eventActiveAddin.JavaAddinRoot = JAVA_ADDIN_ROOT;
+			eventActiveAddin.JavaAddinConfig = CONFIG_FILE_NAME;
+			eventActiveAddin.JavaAddinLive = LIVE_FILE_NAME;
+			this.eventsAdd(eventActiveAddin);
 			
 			EventUpdate eventUpdate = new EventUpdate("Update", 7200, true, m_logger);
 			eventUpdate.Catalog = m_catalog;
 			eventUpdate.ConfigFilePath = this.m_javaAddinConfig; 
 			eventUpdate.CommandFilePath = this.m_javaAddinCommand;
-			this.eventsAdd(eventUpdate);
+			this.eventsAdd(eventUpdate);			
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}

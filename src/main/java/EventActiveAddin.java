@@ -3,8 +3,6 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
-import org.json.simple.JSONObject;
-
 import net.prominic.gja_v080.Event;
 import net.prominic.gja_v080.GConfig;
 import net.prominic.gja_v080.GLogger;
@@ -14,8 +12,6 @@ public class EventActiveAddin extends Event {
 	public String JavaAddinRoot = null;
 	public String JavaAddinConfig = null;
 	public String JavaAddinLive = null;
-	public String Catalog = null;
-	public String Server = null;
 
 	public EventActiveAddin(String name, long seconds, boolean fireOnStart, GLogger logger) {
 		super(name, seconds, fireOnStart, logger);
