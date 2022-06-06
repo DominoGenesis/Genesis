@@ -17,28 +17,27 @@ import lotus.domino.Document;
 import lotus.domino.DocumentCollection;
 import lotus.domino.NotesException;
 import lotus.domino.Session;
-import net.prominic.gja_v20220602.GConfig;
-import net.prominic.gja_v20220602.GLogger;
+import net.prominic.gja_v080.GConfig;
+import net.prominic.gja_v080.GLogger;
+import net.prominic.util.FileUtils;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 
 public class JSONRules {
 	private Session m_session;
-	private Database m_ab;
-	private String m_addin;
 	private String m_catalog;
-	private String m_config;
+	private String m_configPath;
+	private String m_commandPath;
 	private GLogger m_logger;
 	private StringBuilder m_logBuilder;
 
 	private final String JSON_VERSION = "1.0.0";
 
-	public JSONRules(Session session, Database ab, String addin, String catalog, String config, GLogger logger) {
+	public JSONRules(Session session, String catalog, String configPath, String commandPath, GLogger logger) {
 		m_session = session;
-		m_ab = ab;
-		m_addin = addin;
 		m_catalog = catalog;
-		m_config = config;
+		m_configPath = configPath;
+		m_commandPath = commandPath;
 		m_logger = logger;
 	}
 
@@ -136,7 +135,7 @@ public class JSONRules {
 	}
 
 	private void updateConfig(JSONObject config) {
-		File f = new File(this.m_config);
+		File f = new File(this.m_configPath);
 		File dir = new File(f.getParent());
 		if (!dir.exists()) {
 			dir.mkdirs();
@@ -145,7 +144,7 @@ public class JSONRules {
 		for(Object key : config.keySet()) {
 			String name = (String) key;
 			String value = (String) config.get(key);
-			GConfig.set(this.m_config, name, value);
+			GConfig.set(this.m_configPath, name, value);
 		}
 	}
 
@@ -177,9 +176,24 @@ public class JSONRules {
 		else if(step.containsKey("databases")) {
 			doDatabases((JSONArray) step.get("databases"));
 		}
+		else if(step.containsKey("commands")) {
+			doCommands((JSONArray) step.get("commands"));
+		}
 		else if(step.containsKey("messages")) {
 			doMessages((JSONArray) step.get("messages"));
 		}
+	}
+
+	private void doCommands(JSONArray list) {
+		if (list == null || list.size() == 0) return;
+
+		String res = "";
+		for(int i=0; i<list.size(); i++) {
+			String v = (String) list.get(i);
+			if (res.length()>0) res += "\n";
+			res += v;
+		}
+		FileUtils.writeFile(new File(this.m_commandPath), res.toString());
 	}
 
 	private void doUpdateDesign(JSONArray list) {
@@ -233,7 +247,7 @@ public class JSONRules {
 				log("Dependency detected: " + v);
 
 				StringBuilder appJSON = HTTP.get(m_catalog + "/package?openagent&id=" + v);
-				JSONRules dependency = new JSONRules(this.m_session, this.m_ab, this.m_addin, this.m_catalog, this.m_config, this.m_logger);
+				JSONRules dependency = new JSONRules(this.m_session, this.m_catalog, this.m_configPath, this.m_commandPath, this.m_logger);
 				dependency.execute(appJSON.toString());
 			}
 		} catch (IOException e) {

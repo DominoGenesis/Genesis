@@ -5,8 +5,8 @@ import java.net.URLEncoder;
 
 import lotus.domino.NotesException;
 import net.prominic.genesis.JSONRules;
-import net.prominic.gja_v20220602.GConfig;
-import net.prominic.gja_v20220602.JavaServerAddinGenesis;
+import net.prominic.gja_v080.GConfig;
+import net.prominic.gja_v080.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -19,7 +19,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-06-03 18:45";
+		return "2022-06-06 15:45";
 	}
 
 	@Override
@@ -133,6 +133,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			// get addin name and it's JSON
 			String id = parts[1];
 			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
+			String commandPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + COMMAND_FILE_NAME;
 			String version = GConfig.get(configPath, "version");
 			logMessage(version);
 
@@ -162,7 +163,7 @@ public class Genesis extends JavaServerAddinGenesis {
 				buf = buf.replace(String.format("{%d}", i), parts[i + 2]);
 			}
 
-			JSONRules rules = new JSONRules(m_session, this.m_ab, id, this.m_catalog, configPath, this.m_logger);
+			JSONRules rules = new JSONRules(m_session, this.m_catalog, configPath, commandPath, m_logger);
 			boolean res = rules.execute(buf);
 			if (!res) {
 				logMessage("The package could not be executed");
@@ -214,7 +215,8 @@ public class Genesis extends JavaServerAddinGenesis {
 			}
 
 			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
-			JSONRules rules = new JSONRules(m_session, this.m_ab, id, this.m_catalog, configPath, this.m_logger);
+			String commandPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + COMMAND_FILE_NAME;
+			JSONRules rules = new JSONRules(m_session, this.m_catalog, configPath, commandPath, m_logger);
 			boolean res = rules.execute(buf);
 
 			logInstall(id, res, rules.getLogData().toString());
