@@ -475,18 +475,18 @@ public class JSONRules {
 		try {
 			database = m_session.getDatabase(null, filePath, false);
 			if (database != null && database.isOpen()) {
-				log(database.getFilePath() + " - already exists; skip creating;");
+				log(String.format("> %s - already exists; skip creating;", database.getFilePath()));
 			}
 			else {
 				log(filePath + " - attempt to create based on template: " + templatePath);
 				Database template = m_session.getDatabase(null, templatePath);
 				if (!template.isOpen()) {
-					log(templatePath + " - template not found");
+					log(String.format("> %s  - template not found", templatePath));
 					return null;
 				}
 				database = template.createFromTemplate(null, filePath, true);
 				database.setTitle(title);
-				log(database.getFilePath() + " - has been created");
+				log(String.format("> %s - has been created", database.getFilePath()));
 			}
 
 			if (!database.isOpen()) {

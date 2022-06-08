@@ -27,7 +27,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-06-06 15:45";
+		return "2022-06-08 12:45";
 	}
 
 	@Override
@@ -147,7 +147,6 @@ public class Genesis extends JavaServerAddinGenesis {
 			// get addin name and it's JSON
 			String id = parts[1];
 			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
-			String commandPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + COMMAND_FILE_NAME;
 			String version = GConfig.get(configPath, "version");
 
 			String buf = HTTP.get(m_catalog + "/package.update?openagent&id=" + id + "&v=" + version).toString();
@@ -176,7 +175,7 @@ public class Genesis extends JavaServerAddinGenesis {
 				buf = buf.replace(String.format("{%d}", i), parts[i + 2]);
 			}
 
-			JSONRules rules = new JSONRules(m_session, this.m_catalog, configPath, commandPath, m_logger);
+			JSONRules rules = new JSONRules(m_session, this.m_catalog, configPath, this.m_javaAddinCommand, m_logger);
 			boolean res = rules.execute(buf);
 			if (!res) {
 				logMessage("The package could not be executed");
@@ -228,8 +227,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			}
 
 			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
-			String commandPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + COMMAND_FILE_NAME;
-			JSONRules rules = new JSONRules(m_session, this.m_catalog, configPath, commandPath, m_logger);
+			JSONRules rules = new JSONRules(m_session, this.m_catalog, configPath, this.m_javaAddinCommand, m_logger);
 			boolean res = rules.execute(buf);
 
 			logInstall(id, res, rules.getLogData().toString());
