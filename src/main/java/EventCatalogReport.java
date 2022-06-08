@@ -1,9 +1,10 @@
 import java.io.File;
+
 import java.io.IOException;
 
-import net.prominic.gja_v080.Event;
-import net.prominic.gja_v080.GConfig;
-import net.prominic.gja_v080.GLogger;
+import net.prominic.gja_v081.Event;
+import net.prominic.gja_v081.GConfig;
+import net.prominic.gja_v081.GLogger;
 import net.prominic.utils.HTTP;
 
 public class EventCatalogReport extends Event {

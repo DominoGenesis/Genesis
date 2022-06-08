@@ -1,11 +1,12 @@
 import java.io.File;
+
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
-import net.prominic.gja_v080.Event;
-import net.prominic.gja_v080.GConfig;
-import net.prominic.gja_v080.GLogger;
+import net.prominic.gja_v081.Event;
+import net.prominic.gja_v081.GConfig;
+import net.prominic.gja_v081.GLogger;
 import net.prominic.util.FileUtils;
 
 public class EventActiveAddin extends Event {
@@ -22,7 +23,6 @@ public class EventActiveAddin extends Event {
 		try {
 			File file = new File(JavaAddinRoot);
 			if (!file.exists()) return;
-
 			String osName = System.getProperty("os.name").toLowerCase();
 			boolean inWindows = osName.contains("win");
 
@@ -34,12 +34,9 @@ public class EventActiveAddin extends Event {
 					String addinLivePath = JavaAddinRoot + File.separator + addinName + File.separator + JavaAddinLive;
 					String addinActive = GConfig.get(addinConfigPath, "active");
 					String runjava = GConfig.get(addinConfigPath, "runjava");
-
 					if ("1".equals(addinActive) && !isLive(addinLivePath)) {
 						String runjavaTask = inWindows ? "nrunjava" : "runjava";
-
 						String cmd = String.format("%s %s", runjavaTask, runjava);
-						
 						@SuppressWarnings("unused")
 						Process proc = Runtime.getRuntime().exec(cmd);
 					}

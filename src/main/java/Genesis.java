@@ -1,12 +1,13 @@
 import java.io.File;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import lotus.domino.NotesException;
 import net.prominic.genesis.JSONRules;
-import net.prominic.gja_v080.GConfig;
-import net.prominic.gja_v080.JavaServerAddinGenesis;
+import net.prominic.gja_v081.GConfig;
+import net.prominic.gja_v081.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
