@@ -10,8 +10,8 @@ import net.prominic.genesis.EventCatalogReport;
 import net.prominic.genesis.EventUpdate;
 import net.prominic.genesis.JSONRules;
 import net.prominic.genesis.ProgramConfig;
-import net.prominic.gja_v081.GConfig;
-import net.prominic.gja_v081.JavaServerAddinGenesis;
+import net.prominic.gja_v082.GConfig;
+import net.prominic.gja_v082.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
@@ -32,7 +32,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-06-08 12:45";
+		return "2022-06-10 14:45";
 	}
 
 	@Override
