@@ -5,7 +5,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import lotus.domino.NotesException;
+import net.prominic.genesis.EventActivate;
+import net.prominic.genesis.EventCatalogReport;
+import net.prominic.genesis.EventUpdate;
 import net.prominic.genesis.JSONRules;
+import net.prominic.genesis.ProgramConfig;
 import net.prominic.gja_v081.GConfig;
 import net.prominic.gja_v081.JavaServerAddinGenesis;
 import net.prominic.utils.HTTP;
@@ -67,11 +71,11 @@ public class Genesis extends JavaServerAddinGenesis {
 			eventCatalogSend.JavaAddinConfig = CONFIG_FILE_NAME; 
 			this.eventsAdd(eventCatalogSend);
 			
-			EventActiveAddin eventActiveAddin = new EventActiveAddin("Active Addin", 7200, true, m_logger);
-			eventActiveAddin.JavaAddinRoot = JAVA_ADDIN_ROOT;
-			eventActiveAddin.JavaAddinConfig = CONFIG_FILE_NAME;
-			eventActiveAddin.JavaAddinLive = LIVE_FILE_NAME;
-			this.eventsAdd(eventActiveAddin);
+			EventActivate eventActivate = new EventActivate("Activate", 7200, true, m_logger);
+			eventActivate.JavaAddinRoot = JAVA_ADDIN_ROOT;
+			eventActivate.JavaAddinConfig = CONFIG_FILE_NAME;
+			eventActivate.JavaAddinLive = LIVE_FILE_NAME;
+			this.eventsAdd(eventActivate);
 			
 			EventUpdate eventUpdate = new EventUpdate("Update", 7200, true, m_logger);
 			eventUpdate.Catalog = m_catalog;

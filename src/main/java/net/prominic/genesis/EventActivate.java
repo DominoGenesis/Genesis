@@ -1,5 +1,6 @@
-import java.io.File;
+package net.prominic.genesis;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
@@ -9,12 +10,12 @@ import net.prominic.gja_v081.GConfig;
 import net.prominic.gja_v081.GLogger;
 import net.prominic.util.FileUtils;
 
-public class EventActiveAddin extends Event {
+public class EventActivate extends Event {
 	public String JavaAddinRoot = null;
 	public String JavaAddinConfig = null;
 	public String JavaAddinLive = null;
 
-	public EventActiveAddin(String name, long seconds, boolean fireOnStart, GLogger logger) {
+	public EventActivate(String name, long seconds, boolean fireOnStart, GLogger logger) {
 		super(name, seconds, fireOnStart, logger);
 	}
 

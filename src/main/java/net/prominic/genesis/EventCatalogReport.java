@@ -1,5 +1,6 @@
-import java.io.File;
+package net.prominic.genesis;
 
+import java.io.File;
 import java.io.IOException;
 
 import net.prominic.gja_v081.Event;

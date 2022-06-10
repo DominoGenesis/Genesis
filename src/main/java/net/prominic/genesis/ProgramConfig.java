@@ -1,5 +1,6 @@
-import lotus.domino.Database;
+package net.prominic.genesis;
 
+import lotus.domino.Database;
 import lotus.domino.DateTime;
 import lotus.domino.Document;
 import lotus.domino.DocumentCollection;

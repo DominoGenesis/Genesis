@@ -1,3 +1,5 @@
+package net.prominic.genesis;
+
 import java.io.File;
 
 import java.io.IOException;
