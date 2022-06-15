@@ -1,7 +1,6 @@
 package net.prominic.genesis;
 
 import java.io.File;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
@@ -13,11 +12,11 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import lotus.domino.Database;
-import lotus.domino.Document;
-import lotus.domino.DocumentCollection;
-import lotus.domino.NotesException;
 import lotus.domino.Session;
+import lotus.domino.Database;
+import lotus.domino.DocumentCollection;
+import lotus.domino.Document;
+import lotus.domino.NotesException;
 import net.prominic.gja_v082.GConfig;
 import net.prominic.gja_v082.GLogger;
 import net.prominic.util.FileUtils;
@@ -462,7 +461,8 @@ public class JSONRules {
 		for (Map.Entry<String, Object> entry : entries) {
 			String name = entry.getKey();
 			String value = (String) entry.getValue();
-			doc.replaceItemValue(name, this.m_session.evaluate(value));
+			doc.replaceItemValue(name, value);
+//			doc.replaceItemValue(name, this.m_session.evaluate(value));
 		}
 
 		if (computeWithForm) {
