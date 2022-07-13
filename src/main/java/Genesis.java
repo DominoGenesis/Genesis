@@ -3,8 +3,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import lotus.domino.Database;
+import lotus.domino.DateTime;
 import lotus.domino.NotesException;
 import net.prominic.genesis.EventActivate;
 import net.prominic.genesis.EventCatalogReport;
@@ -29,12 +34,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.10";
+		return "0.6.11";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-06-20 19:00";
+		return "2022-07-13 15:00";
 	}
 
 	@Override
@@ -120,7 +125,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			showList();
 		} else if ("state".equals(cmd)) {
 			showState();
-		} else if (cmd.startsWith("crosscertify")) {
+		} else if (cmd.startsWith("crosscertify") || cmd.startsWith("cc ")) {
 			crossCertify(cmd);
 		} else if (cmd.startsWith("sign")) {
 			sign(cmd);
@@ -157,12 +162,34 @@ public class Genesis extends JavaServerAddinGenesis {
 		} catch (NotesException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	private void crossCertify(String cmd) {
-		logMessage("crossCertify");
-		//public static void crossCertify(String regServer, String certIdFilePath, String idFilePath, String password, int years)  throws Exception {
+		try {
+			// validate command
+			String[] parts = cmd.split("\\s+");
+			if (parts.length < 6) {
+				logMessage("crosscertify (or cc) command should have at least 5 parameters");
+				logMessage("tell genesis cc <1.RegistrationServer> <2.cert.id> <3.password> <4.Expiration:dd-mm-yyyy> <5.user.id>");
+				return;
+			}
+
+			String registrationServer = parts[1];
+			String certID = parts[2];
+			String certPassword = parts[3];
+			String expiration = parts[4];	// dd-mm-yyyy
+			String userID = parts[5];
+			
+			DateFormat formatter = new SimpleDateFormat("dd-mm-yyyy");
+			Date date = formatter.parse(expiration);
+			DateTime expirationDate = m_session.createDateTime(date);
+
+			DominoUtils.crossCertify(m_session, registrationServer, certID, certPassword, expirationDate, userID);
+		} catch (NotesException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void showState() {
