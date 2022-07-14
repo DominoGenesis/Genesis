@@ -352,7 +352,8 @@ public class Genesis extends JavaServerAddinGenesis {
 		logMessage("   state            Show all installed addin (active and non active)");
 		logMessage("   install <name>   Install Java addin from the Catalog");
 		logMessage("   update <name>    Update Java addin from the Catalog");
-		logMessage("   sign <dbpath>    Update Java addin from the Catalog");
+		logMessage("   sign <dbpath>    Sign a database");
+		logMessage("   cc   help   	    Cross certify an ID");
 	}
 
 	/*

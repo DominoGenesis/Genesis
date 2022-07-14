@@ -50,22 +50,26 @@ public class EventActivate extends Event {
 	}
 
 	private boolean isLive(String javaAddinPath) {
-		File f = new File(javaAddinPath);
-		if (!f.exists()) return false;
+		try { 
+			File f = new File(javaAddinPath);
+			if (!f.exists()) return false;
 
-		String sTimeStamp = FileUtils.readFile(f);
-		if (sTimeStamp.length() == 0) return false;
+			String sTimeStamp = FileUtils.readFile(f);
+			if (sTimeStamp.length() == 0) return false;
 
-		// last live date
-		long timeStamp = Long.parseLong(sTimeStamp);
-		Date date1 = new Date(timeStamp);
-		Calendar c1 = Calendar.getInstance();
-		c1.setTime(date1);
-		c1.add(Calendar.HOUR, 1);
+			// last live date
+			long timeStamp = Long.parseLong(sTimeStamp);
+			Date date1 = new Date(timeStamp);
+			Calendar c1 = Calendar.getInstance();
+			c1.setTime(date1);
+			c1.add(Calendar.HOUR, 1);
 
-		// current date
-		Calendar c2 = Calendar.getInstance();
+			// current date
+			Calendar c2 = Calendar.getInstance();
 
-		return c1.after(c2);
+			return c1.after(c2);
+		} catch(Exception e){  
+			return false;  
+		}
 	}
 }

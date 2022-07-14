@@ -45,7 +45,7 @@ public class DominoUtils {
 		}
 	}
 
-	public static void crossCertify(Session session, String regServer, String certId, String certPassword, DateTime expiration, String userId) {
+	public static void crossCertify(Session session, String regServer, String certId, String userId) {
 		try {
 			NotesThread.sinitThread();
 			
@@ -54,7 +54,34 @@ public class DominoUtils {
 			Registration reg = session.createRegistration();
 			reg.setRegistrationServer(regServer);
 			reg.setCertifierIDFile(certId);
-			reg.setExpiration(expiration);
+
+			if (reg.crossCertify(userId)) {
+				log("[CrossCertify] - succeeded");
+			}
+			else {
+				log("[CrossCertify] - failed");
+			}
+			
+			reg.recycle();
+		} catch(NotesException e) {
+			log(String.format("[CrossCertify] failed: %d %s", e.id, e.text));
+			e.printStackTrace();
+		}
+		finally {
+			NotesThread.stermThread();
+		}
+	}
+	
+	public static void crossCertify(Session session, String regServer, String certId, String certPassword, DateTime expirationDate, String userId) {
+		try {
+//			NotesThread.sinitThread();
+			
+			log("[CrossCertify] - started (1)");
+			
+			Registration reg = session.createRegistration();
+			reg.setRegistrationServer(regServer);
+			reg.setCertifierIDFile(certId);
+			reg.setExpiration(expirationDate);
 
 			if (reg.crossCertify(userId, certPassword, "Programmatically cross certified (using Genesis)")) {
 				log("[CrossCertify] - succeeded");
@@ -69,7 +96,7 @@ public class DominoUtils {
 			e.printStackTrace();
 		}
 		finally {
-			NotesThread.stermThread();
+//			NotesThread.stermThread();
 		}
 	}
 
