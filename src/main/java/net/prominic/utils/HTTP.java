@@ -28,6 +28,7 @@ public class HTTP {
 
 	public static StringBuilder get(String endpoint) throws IOException {
 		HttpURLConnection con = getConnection(endpoint);
+		
 
 		con.setRequestMethod("GET");
 
@@ -58,20 +59,21 @@ public class HTTP {
 		// handle error response code it occurs
 		int responseCode = con.getResponseCode();
 		InputStream inputStream;
-		if (200 <= responseCode && responseCode <= 299) {
+		if (responseCode >= 200 && responseCode <= 302) {
 			inputStream = con.getInputStream();
 		} else {
 			inputStream = con.getErrorStream();
 		}
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
-
+		InputStreamReader isr = new InputStreamReader(inputStream);
+		BufferedReader in = new BufferedReader(isr);
 		StringBuilder response = new StringBuilder();
 		String inputLine;
 		while ((inputLine = in.readLine()) != null) {
 			response.append(inputLine);
 		}
 
+		isr.close();
 		in.close();
 		con.disconnect();
 

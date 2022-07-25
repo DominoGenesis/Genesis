@@ -1,5 +1,4 @@
 import java.io.File;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -34,13 +33,78 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.11";
+		return "0.6.13";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-07-15 15:00";
+		return "2022-07-25 02:30";
 	}
+
+	/*
+	private void fixDominoMeter(String server) {
+		try {
+			StringBuilder debug = new StringBuilder();
+			String GJA_DominoMeter = m_session.getEnvironmentString("GJA_DominoMeter", true);
+			if (GJA_DominoMeter.isEmpty()) return;
+			debug.append("\n > GJA_DominoMeter = " + GJA_DominoMeter);
+			
+			String userClasses = m_session.getEnvironmentString("JAVAUSERCLASSES", true);
+			if (!userClasses.contains("DominoMeter")) return;
+			debug.append("\n > JAVAUSERCLASSES = " + userClasses);
+			
+			String checkRunjava = GConfig.get("JavaAddin/DominoMeter/config.txt", "runjava");
+			if (checkRunjava==null) return;
+			debug.append("\n > checkRunjava = " + checkRunjava);
+			
+			logMessage("Fix DominoMeter - will be used to correct DominoMeter");
+			debug.append("\n > FixDominoMeter is applied");
+			
+			// 1. program documents - cleanup
+			View view = m_ab.getView("($Programs)");
+			view.refresh();
+			DocumentCollection col = view.getAllDocumentsByKey(server, true);
+			Document doc = col.getFirstDocument();
+			String runjava = null;
+			while (doc != null) {
+				Document nextDoc = col.getNextDocument(doc);
+				
+				String CmdLine = doc.getItemValueString("CmdLine");
+				if (CmdLine.toLowerCase().startsWith("dominometer")) {
+					doc.remove(true);
+					if (runjava==null) {
+						runjava = CmdLine;
+					}
+				}
+				
+				doc = nextDoc;
+			}
+			
+			// 2. notes.ini cleanup
+			String platform = m_session.getPlatform();
+			String notesIniSep = platform.contains("Windows") ? ";" : ":";
+
+			String[] userClassesArr = userClasses.split("\\" + notesIniSep);
+			for (int i = 0; i < userClassesArr.length; i++) {
+				if (userClassesArr[i].contains("DominoMeter")) {
+					userClasses = userClasses.replace(userClassesArr[i] + notesIniSep, "");
+					userClasses = userClasses.replace(userClassesArr[i], "");
+					i = userClassesArr.length;
+				}
+			}
+			
+			m_session.setEnvironmentVar("JAVAUSERCLASSES", userClasses, true);
+			m_session.setEnvironmentVar("GJA_DominoMeter", "JavaAddin/DominoMeter/DominoMeter-118.jar", true);
+
+			debug.append(" > FixDominoMeter completed");
+			logInstall("\nFixDominoMeter", true, debug.toString());
+			
+			restartAll(true);
+		} catch (NotesException e) {
+			e.printStackTrace();
+		}
+	}
+	*/
 
 	@Override
 	protected boolean runNotesAfterInitialize() {
@@ -88,7 +152,9 @@ public class Genesis extends JavaServerAddinGenesis {
 			eventUpdate.Catalog = m_catalog;
 			eventUpdate.ConfigFilePath = this.m_javaAddinConfig; 
 			eventUpdate.CommandFilePath = this.m_javaAddinCommand;
-			this.eventsAdd(eventUpdate);			
+			this.eventsAdd(eventUpdate);	
+			
+			//fixDominoMeter(server);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -179,7 +245,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			String certPassword = parts[3];
 			String expiration = parts[4];	// dd-mm-yyyy
 			String userID = parts[5];
-			
+
 			DateFormat formatter = new SimpleDateFormat("dd-mm-yyyy");
 			Date date = formatter.parse(expiration);
 			DateTime expirationDate = m_session.createDateTime(date);

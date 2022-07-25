@@ -3,7 +3,7 @@
 	<groupId>net.prominic.Genesis</groupId>
 	<artifactId>Genesis</artifactId>
 	<packaging>jar</packaging>
-	<version>0.6.11</version>
+	<version>0.6.13</version>
 	<name>Genesis</name>
 	<url>http://maven.apache.org</url>
 
