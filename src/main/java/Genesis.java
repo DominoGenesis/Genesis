@@ -12,6 +12,7 @@ import lotus.domino.DateTime;
 import lotus.domino.NotesException;
 import net.prominic.genesis.EventActivate;
 import net.prominic.genesis.EventCatalogReport;
+import net.prominic.genesis.EventMyAccountDominoPerformanceLogging;
 import net.prominic.genesis.EventUpdate;
 import net.prominic.genesis.JSONRules;
 import net.prominic.genesis.ProgramConfig;
@@ -33,12 +34,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.13";
+		return "0.6.14 (logging)";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-07-25 02:30";
+		return "2022-07-27 02:30";
 	}
 
 	/*
@@ -48,18 +49,18 @@ public class Genesis extends JavaServerAddinGenesis {
 			String GJA_DominoMeter = m_session.getEnvironmentString("GJA_DominoMeter", true);
 			if (GJA_DominoMeter.isEmpty()) return;
 			debug.append("\n > GJA_DominoMeter = " + GJA_DominoMeter);
-			
+
 			String userClasses = m_session.getEnvironmentString("JAVAUSERCLASSES", true);
 			if (!userClasses.contains("DominoMeter")) return;
 			debug.append("\n > JAVAUSERCLASSES = " + userClasses);
-			
+
 			String checkRunjava = GConfig.get("JavaAddin/DominoMeter/config.txt", "runjava");
 			if (checkRunjava==null) return;
 			debug.append("\n > checkRunjava = " + checkRunjava);
-			
+
 			logMessage("Fix DominoMeter - will be used to correct DominoMeter");
 			debug.append("\n > FixDominoMeter is applied");
-			
+
 			// 1. program documents - cleanup
 			View view = m_ab.getView("($Programs)");
 			view.refresh();
@@ -68,7 +69,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			String runjava = null;
 			while (doc != null) {
 				Document nextDoc = col.getNextDocument(doc);
-				
+
 				String CmdLine = doc.getItemValueString("CmdLine");
 				if (CmdLine.toLowerCase().startsWith("dominometer")) {
 					doc.remove(true);
@@ -76,10 +77,10 @@ public class Genesis extends JavaServerAddinGenesis {
 						runjava = CmdLine;
 					}
 				}
-				
+
 				doc = nextDoc;
 			}
-			
+
 			// 2. notes.ini cleanup
 			String platform = m_session.getPlatform();
 			String notesIniSep = platform.contains("Windows") ? ";" : ":";
@@ -92,19 +93,19 @@ public class Genesis extends JavaServerAddinGenesis {
 					i = userClassesArr.length;
 				}
 			}
-			
+
 			m_session.setEnvironmentVar("JAVAUSERCLASSES", userClasses, true);
 			m_session.setEnvironmentVar("GJA_DominoMeter", "JavaAddin/DominoMeter/DominoMeter-118.jar", true);
 
 			debug.append(" > FixDominoMeter completed");
 			logInstall("\nFixDominoMeter", true, debug.toString());
-			
+
 			restartAll(true);
 		} catch (NotesException e) {
 			e.printStackTrace();
 		}
 	}
-	*/
+	 */
 
 	@Override
 	protected boolean runNotesAfterInitialize() {
@@ -152,7 +153,12 @@ public class Genesis extends JavaServerAddinGenesis {
 			eventUpdate.Catalog = m_catalog;
 			eventUpdate.ConfigFilePath = this.m_javaAddinConfig; 
 			eventUpdate.CommandFilePath = this.m_javaAddinCommand;
-			this.eventsAdd(eventUpdate);	
+			this.eventsAdd(eventUpdate);
+			
+			EventMyAccountDominoPerformanceLogging eventLogging = new EventMyAccountDominoPerformanceLogging("Logging", 86400, true, m_logger);
+			eventLogging.ab = this.m_ab;
+			eventLogging.session = this.m_session;
+			this.eventsAdd(eventLogging);
 			
 			//fixDominoMeter(server);
 		} catch (UnsupportedEncodingException e) {
@@ -191,6 +197,8 @@ public class Genesis extends JavaServerAddinGenesis {
 			showList();
 		} else if ("state".equals(cmd)) {
 			showState();
+		} else if ("MyAccountDominoPerformanceLogging".equals(cmd)) {
+			MyAccountDominoPerformanceLogging();
 		} else if (cmd.startsWith("crosscertify") || cmd.startsWith("cc ")) {
 			crossCertify(cmd);
 		} else if (cmd.startsWith("sign")) {
@@ -205,6 +213,13 @@ public class Genesis extends JavaServerAddinGenesis {
 		}
 
 		return true;
+	}
+
+	private void MyAccountDominoPerformanceLogging() {
+		EventMyAccountDominoPerformanceLogging eventLogging = new EventMyAccountDominoPerformanceLogging("Logging", 86400, true, m_logger);
+		eventLogging.ab = this.m_ab;
+		eventLogging.session = this.m_session;
+		eventLogging.run();
 	}
 
 	private void sign(String cmd) {
@@ -419,7 +434,9 @@ public class Genesis extends JavaServerAddinGenesis {
 		logMessage("   install <name>   Install Java addin from the Catalog");
 		logMessage("   update <name>    Update Java addin from the Catalog");
 		logMessage("   sign <dbpath>    Sign a database");
-		logMessage("   cc   help   	    Cross certify an ID");
+		logMessage("   MyAccountDominoPerformanceLogging    set performance logging");
+		//logMessage("   cc   help   	    Cross certify an ID");
+		
 	}
 
 	/*
