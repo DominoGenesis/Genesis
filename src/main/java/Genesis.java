@@ -6,13 +6,15 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import lotus.domino.Database;
 import lotus.domino.DateTime;
+import lotus.domino.Document;
 import lotus.domino.NotesException;
 import net.prominic.genesis.EventActivate;
 import net.prominic.genesis.EventCatalogReport;
-import net.prominic.genesis.EventMyAccountDominoPerformanceLogging;
 import net.prominic.genesis.EventUpdate;
 import net.prominic.genesis.JSONRules;
 import net.prominic.genesis.ProgramConfig;
@@ -34,78 +36,13 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.14 (logging)";
+		return "0.6.14 (appstore)";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-07-27 02:30";
+		return "2022-08-03 16:30";
 	}
-
-	/*
-	private void fixDominoMeter(String server) {
-		try {
-			StringBuilder debug = new StringBuilder();
-			String GJA_DominoMeter = m_session.getEnvironmentString("GJA_DominoMeter", true);
-			if (GJA_DominoMeter.isEmpty()) return;
-			debug.append("\n > GJA_DominoMeter = " + GJA_DominoMeter);
-
-			String userClasses = m_session.getEnvironmentString("JAVAUSERCLASSES", true);
-			if (!userClasses.contains("DominoMeter")) return;
-			debug.append("\n > JAVAUSERCLASSES = " + userClasses);
-
-			String checkRunjava = GConfig.get("JavaAddin/DominoMeter/config.txt", "runjava");
-			if (checkRunjava==null) return;
-			debug.append("\n > checkRunjava = " + checkRunjava);
-
-			logMessage("Fix DominoMeter - will be used to correct DominoMeter");
-			debug.append("\n > FixDominoMeter is applied");
-
-			// 1. program documents - cleanup
-			View view = m_ab.getView("($Programs)");
-			view.refresh();
-			DocumentCollection col = view.getAllDocumentsByKey(server, true);
-			Document doc = col.getFirstDocument();
-			String runjava = null;
-			while (doc != null) {
-				Document nextDoc = col.getNextDocument(doc);
-
-				String CmdLine = doc.getItemValueString("CmdLine");
-				if (CmdLine.toLowerCase().startsWith("dominometer")) {
-					doc.remove(true);
-					if (runjava==null) {
-						runjava = CmdLine;
-					}
-				}
-
-				doc = nextDoc;
-			}
-
-			// 2. notes.ini cleanup
-			String platform = m_session.getPlatform();
-			String notesIniSep = platform.contains("Windows") ? ";" : ":";
-
-			String[] userClassesArr = userClasses.split("\\" + notesIniSep);
-			for (int i = 0; i < userClassesArr.length; i++) {
-				if (userClassesArr[i].contains("DominoMeter")) {
-					userClasses = userClasses.replace(userClassesArr[i] + notesIniSep, "");
-					userClasses = userClasses.replace(userClassesArr[i], "");
-					i = userClassesArr.length;
-				}
-			}
-
-			m_session.setEnvironmentVar("JAVAUSERCLASSES", userClasses, true);
-			m_session.setEnvironmentVar("GJA_DominoMeter", "JavaAddin/DominoMeter/DominoMeter-118.jar", true);
-
-			debug.append(" > FixDominoMeter completed");
-			logInstall("\nFixDominoMeter", true, debug.toString());
-
-			restartAll(true);
-		} catch (NotesException e) {
-			e.printStackTrace();
-		}
-	}
-	 */
 
 	@Override
 	protected boolean runNotesAfterInitialize() {
@@ -114,8 +51,11 @@ public class Genesis extends JavaServerAddinGenesis {
 			if ("dev".equals(m_catalog)) {
 				m_catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 			}
+			if ("appstore".equals(m_catalog)) {
+				m_catalog = "https://appstore.dominogenesis.com/gc.nsf";
+			}
 		} else {
-			m_catalog = "https://domino-1.dmytro.cloud/gc.nsf";
+			m_catalog = "https://appstore.dominogenesis.com/gc.nsf";
 		}
 
 		// check if connection could be established
@@ -154,13 +94,6 @@ public class Genesis extends JavaServerAddinGenesis {
 			eventUpdate.ConfigFilePath = this.m_javaAddinConfig; 
 			eventUpdate.CommandFilePath = this.m_javaAddinCommand;
 			this.eventsAdd(eventUpdate);
-			
-			EventMyAccountDominoPerformanceLogging eventLogging = new EventMyAccountDominoPerformanceLogging("Logging", 86400, true, m_logger);
-			eventLogging.ab = this.m_ab;
-			eventLogging.session = this.m_session;
-			this.eventsAdd(eventLogging);
-			
-			//fixDominoMeter(server);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -216,10 +149,72 @@ public class Genesis extends JavaServerAddinGenesis {
 	}
 
 	private void MyAccountDominoPerformanceLogging() {
-		EventMyAccountDominoPerformanceLogging eventLogging = new EventMyAccountDominoPerformanceLogging("Logging", 86400, true, m_logger);
-		eventLogging.ab = this.m_ab;
-		eventLogging.session = this.m_session;
-		eventLogging.run();
+		logMessage("[MyAccountDominoPerformanceLogging - started]");
+		
+		try {
+			String server = m_session.getServerName();
+			Document serverDoc = m_ab.getView("($ServersLookup)").getDocumentByKey(server, true);	
+
+			HashMap<String, String> fieldsString = new HashMap<String, String>();
+			fieldsString.put("HTTP_LogToFiles", "1");
+			fieldsString.put("HTTP_LogToDomLog", "0");
+			fieldsString.put("HTTP_AccessLogFormat", "1");
+			fieldsString.put("HTTP_AccessLogFormat", "1");
+			fieldsString.put("HTTP_LogTime", "0");
+			fieldsString.put("HTTP_LogFileDuration", "0");
+
+			HashMap<String, Integer> fieldsInteger = new HashMap<String, Integer>();
+			fieldsInteger.put("HTTP_MaxLogEntrySize", 10);
+			fieldsInteger.put("HTTP_MaxLogFileSize", 0);
+
+			boolean toSave = false;
+			
+			// Iterating Strings through for loop
+			for (Map.Entry<String, String> set : fieldsString.entrySet()) {
+				String itemName = set.getKey();
+
+				String docValue = serverDoc.getItemValueString(itemName);
+				String defValue = set.getValue();
+				if (!defValue.equals(docValue)) {
+					serverDoc.replaceItemValue(itemName, defValue);
+					logMessage(String.format("> set %s = %s", itemName, defValue));
+					toSave = true;
+				}
+			}
+			
+			// Iterating Strings through for loop
+			for (Map.Entry<String, Integer> set : fieldsInteger.entrySet()) {
+				String itemName = set.getKey();
+
+				int docValue;
+				if (serverDoc.hasItem(itemName)) {
+					docValue = serverDoc.getItemValueInteger(itemName);
+				}
+				else {
+					docValue = -1;
+				}
+
+				int defValue = set.getValue();
+				if (defValue != docValue) {
+					serverDoc.replaceItemValue(itemName, defValue);
+					logMessage(String.format("> set %s = %d", itemName, defValue));
+					toSave = true;
+				}
+			}
+			
+			if (toSave) {
+				logMessage("> logging settings have been updated");
+				serverDoc.save();
+			}
+			else {
+				logMessage("> logging settings - OK (no updates)");
+			}
+
+		} catch (NotesException e) {
+			e.printStackTrace();
+		}
+		
+		logMessage("[MyAccountDominoPerformanceLogging - completed]");
 	}
 
 	private void sign(String cmd) {
