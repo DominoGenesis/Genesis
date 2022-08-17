@@ -1,16 +1,12 @@
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import lotus.domino.Database;
-import lotus.domino.DateTime;
 import lotus.domino.Document;
 import lotus.domino.NotesException;
 import net.prominic.genesis.EventActivate;
@@ -36,12 +32,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.14 (appstore)";
+		return "0.6.15 (runjson)";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-08-03 16:30";
+		return "2022-08-16 16:30";
 	}
 
 	@Override
@@ -100,7 +96,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 		return true;
 	}
-
+	
 	/*
 	 * test connection with Domino App Catalog (dac.nsf)
 	 */
@@ -132,20 +128,47 @@ public class Genesis extends JavaServerAddinGenesis {
 			showState();
 		} else if ("MyAccountDominoPerformanceLogging".equals(cmd)) {
 			MyAccountDominoPerformanceLogging();
-		} else if (cmd.startsWith("crosscertify") || cmd.startsWith("cc ")) {
-			crossCertify(cmd);
 		} else if (cmd.startsWith("sign")) {
 			sign(cmd);
 		} else if (cmd.startsWith("install")) {
 			install(cmd);
 		} else if (cmd.startsWith("update")) {
 			update(cmd);
+		} else if (cmd.startsWith("runjson")) {
+			runjson(cmd);
 		} else {
 			logMessage("Command is not recognized (use -h or help to get details)");
 			return false;
 		}
 
 		return true;
+	}
+
+	private void runjson(String cmd) {
+		try {
+			// validate command
+			String[] parts = cmd.split("\\s+");
+			if (parts.length < 2) {
+				logMessage("Command is not recognized (use -h or help to get details)");
+				logMessage("runjson command should have <filepath> as a parameter");
+				return;
+			}
+
+			// get filepath to json
+			String filepath = parts[1];
+			FileReader fr = new FileReader(filepath);
+
+			String configPath = JAVA_ADDIN_ROOT + File.separator + "Genesis" + File.separator + CONFIG_FILE_NAME;
+			JSONRules rules = new JSONRules(m_session, this.m_catalog, configPath, this.m_javaAddinCommand, m_logger);
+			boolean res = rules.execute(fr);
+			if (!res) {
+				logMessage("The json file can't be executed");
+				return;
+			}
+		} catch (IOException e) {
+			logMessage("JSON failed: " + e.getMessage());
+		}
+		
 	}
 
 	private void MyAccountDominoPerformanceLogging() {
@@ -236,34 +259,6 @@ public class Genesis extends JavaServerAddinGenesis {
 
 			DominoUtils.sign(database);
 		} catch (NotesException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void crossCertify(String cmd) {
-		try {
-			// validate command
-			String[] parts = cmd.split("\\s+");
-			if (parts.length < 6) {
-				logMessage("crosscertify (or cc) command should have at least 5 parameters");
-				logMessage("tell genesis cc <1.RegistrationServer> <2.cert.id> <3.password> <4.Expiration:dd-mm-yyyy> <5.user.id>");
-				return;
-			}
-
-			String registrationServer = parts[1];
-			String certID = parts[2];
-			String certPassword = parts[3];
-			String expiration = parts[4];	// dd-mm-yyyy
-			String userID = parts[5];
-
-			DateFormat formatter = new SimpleDateFormat("dd-mm-yyyy");
-			Date date = formatter.parse(expiration);
-			DateTime expirationDate = m_session.createDateTime(date);
-
-			DominoUtils.crossCertify(m_session, registrationServer, certID, certPassword, expirationDate, userID);
-		} catch (NotesException e) {
-			e.printStackTrace();
-		} catch (ParseException e) {
 			e.printStackTrace();
 		}
 	}
@@ -429,9 +424,8 @@ public class Genesis extends JavaServerAddinGenesis {
 		logMessage("   install <name>   Install Java addin from the Catalog");
 		logMessage("   update <name>    Update Java addin from the Catalog");
 		logMessage("   sign <dbpath>    Sign a database");
-		logMessage("   MyAccountDominoPerformanceLogging    set performance logging");
-		//logMessage("   cc   help   	    Cross certify an ID");
-		
+		logMessage("   runjson <path>   Process json config file");
+		logMessage("   MyAccountDominoPerformanceLogging    set performance logging");		
 	}
 
 	/*
