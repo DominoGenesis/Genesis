@@ -11,6 +11,7 @@ import lotus.domino.Document;
 import lotus.domino.NotesException;
 import net.prominic.genesis.EventActivate;
 import net.prominic.genesis.EventCatalogReport;
+import net.prominic.genesis.EventRunJSON;
 import net.prominic.genesis.EventUpdate;
 import net.prominic.genesis.JSONRules;
 import net.prominic.genesis.ProgramConfig;
@@ -90,6 +91,15 @@ public class Genesis extends JavaServerAddinGenesis {
 			eventUpdate.ConfigFilePath = this.m_javaAddinConfig; 
 			eventUpdate.CommandFilePath = this.m_javaAddinCommand;
 			this.eventsAdd(eventUpdate);
+			
+			EventRunJSON eventRunJSON = new EventRunJSON("RunJSON", 1, true, m_logger);
+			eventRunJSON.session = m_session;
+			eventRunJSON.Catalog = m_catalog;
+			eventRunJSON.JavaAddinConfig = this.m_javaAddinConfig;
+			eventRunJSON.JavaAddinCommand = this.m_javaAddinCommand;
+			eventRunJSON.JavaAddinJSON = this.m_javaAddinFolder + File.separator + "json";
+			eventRunJSON.JavaAddinJSONResponse = this.m_javaAddinFolder + File.separator + "jsonresponse";
+			this.eventsAdd(eventRunJSON);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}

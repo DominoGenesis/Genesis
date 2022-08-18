@@ -375,7 +375,17 @@ public class JSONRules {
 			String action = (String) json.get("action");
 			String filePath = (String) json.get("filePath");
 			boolean sign = json.containsKey("sign") && (Boolean) json.get("sign");
-
+			boolean replace = json.containsKey("replace") && (Boolean)json.get("replace");
+			
+			if (replace) {
+				log("> replace: true");
+				database = m_session.getDatabase(null, filePath);
+				log("> database will be deleted: " + database.getFilePath());
+				if (database != null) {
+					database.remove();
+				}
+			}
+			
 			if ("create".equalsIgnoreCase(action)) {
 				if (json.containsKey("templatePath")) {
 					String title = (String) json.get("title");
