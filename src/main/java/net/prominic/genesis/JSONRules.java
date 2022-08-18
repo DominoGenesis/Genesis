@@ -140,7 +140,7 @@ public class JSONRules {
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
-		
+
 		for(Object key : config.keySet()) {
 			String name = (String) key;
 			String value = (String) config.get(key);
@@ -376,7 +376,7 @@ public class JSONRules {
 			String filePath = (String) json.get("filePath");
 			boolean sign = json.containsKey("sign") && (Boolean) json.get("sign");
 			boolean replace = json.containsKey("replace") && (Boolean)json.get("replace");
-			
+
 			if (replace) {
 				log("> replace: true");
 				database = m_session.getDatabase(null, filePath);
@@ -385,7 +385,7 @@ public class JSONRules {
 					database.remove();
 				}
 			}
-			
+
 			if ("create".equalsIgnoreCase(action)) {
 				if (json.containsKey("templatePath")) {
 					String title = (String) json.get("title");
@@ -472,7 +472,7 @@ public class JSONRules {
 			String name = entry.getKey();
 			String value = (String) entry.getValue();
 			doc.replaceItemValue(name, value);
-//			doc.replaceItemValue(name, this.m_session.evaluate(value));
+			//			doc.replaceItemValue(name, this.m_session.evaluate(value));
 		}
 
 		if (computeWithForm) {
@@ -540,8 +540,15 @@ public class JSONRules {
 
 	private void log(Exception e) {
 		e.printStackTrace();
-		m_logBuilder.append(e.getLocalizedMessage());
-		m_logBuilder.append(System.getProperty("line.separator"));
+		m_logger.severe(e);
+
+		String message = e.getLocalizedMessage();
+		if (message == null || message.isEmpty()) {
+			message = "an undefined exception was thrown";
+		}
+
+		m_logBuilder.append(message);
+		m_logBuilder.append(System.getProperty("line.separator"));	
 	}
 
 	private void log(Object o) {
