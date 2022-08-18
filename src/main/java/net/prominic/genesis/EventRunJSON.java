@@ -1,10 +1,7 @@
 package net.prominic.genesis;
 
 import java.io.File;
-
 import java.io.FileReader;
-import java.util.Date;
-
 import lotus.domino.Session;
 import net.prominic.gja_v082.Event;
 import net.prominic.gja_v082.GLogger;
@@ -37,24 +34,24 @@ public class EventRunJSON extends Event {
 
 			for(int i=0; i<files.length; i++) {
 				FileReader fr = new FileReader(files[i]);
-
+				this.getLogger().info(String.format("> %s is going to be processed", files[i].getName()));
+				
 				JSONRules rules = new JSONRules(session, Catalog, JavaAddinConfig, JavaAddinCommand, getLogger());
 				boolean res = rules.execute(fr);
 				if (!res) {
-					System.out.println("The json file can't be executed");
+					this.getLogger().info("(!) The json file can't be executed");
 				}
 				
 				fr.close();
 
 				String timestamp = String.valueOf(new java.util.Date().getTime());
 				String newPath = JavaAddinJSONResponse + File.separator + timestamp + "-" + files[i].getName();
-				System.out.println(newPath);
+				this.getLogger().info(String.format("> file has been moved to a new location: %s", newPath));
 				files[i].renameTo(new File(newPath));
 			}
 		} catch (Exception e) {
+			this.getLogger().severe(e);
 			e.printStackTrace();
 		}					
-
 	}
-
 }
