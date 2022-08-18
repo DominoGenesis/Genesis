@@ -381,7 +381,7 @@ public class JSONRules {
 				log("> replace: true");
 				database = m_session.getDatabase(null, filePath);
 				log("> database will be deleted: " + database.getFilePath());
-				if (database != null) {
+				if (database != null && database.isOpen()) {
 					database.remove();
 				}
 			}
