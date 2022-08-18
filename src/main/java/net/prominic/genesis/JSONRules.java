@@ -69,8 +69,6 @@ public class JSONRules {
 	 * Exectute JSON
 	 */
 	private boolean execute(JSONObject obj) {
-		m_logBuilder = new StringBuilder();
-
 		// check json version
 		if (obj.containsKey("versionjson")) {
 			String versionjson = (String) obj.get("versionjson");	
@@ -539,6 +537,10 @@ public class JSONRules {
 	}
 
 	private void log(Exception e) {
+		if (m_logBuilder == null) {
+			m_logBuilder = new StringBuilder();
+		}
+
 		e.printStackTrace();
 		m_logger.severe(e);
 
@@ -546,12 +548,16 @@ public class JSONRules {
 		if (message == null || message.isEmpty()) {
 			message = "an undefined exception was thrown";
 		}
-
+		
 		m_logBuilder.append(message);
 		m_logBuilder.append(System.getProperty("line.separator"));	
 	}
 
 	private void log(Object o) {
+		if (m_logBuilder == null) {
+			m_logBuilder = new StringBuilder();
+		}
+		
 		System.out.println(o.toString());
 		m_logBuilder.append(o.toString());
 		m_logBuilder.append(System.getProperty("line.separator"));
