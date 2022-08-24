@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -13,6 +15,8 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import lotus.domino.Session;
+import lotus.domino.ACL;
+import lotus.domino.ACLEntry;
 import lotus.domino.Database;
 import lotus.domino.DocumentCollection;
 import lotus.domino.Document;
@@ -409,11 +413,271 @@ public class JSONRules {
 				DominoUtils.sign(database);
 			}
 
+			if (json.containsKey("ACL")) {
+				parseACL(database, (JSONObject) json.get("ACL"));
+			}
+
 			JSONArray documents = (JSONArray) json.get("documents");
 			parseDocuments(database, documents);
 		} catch (NotesException e) {
 			log(e);
 		}
+	}
+
+	private void parseACL(Database database, JSONObject json) {
+		try {
+
+			ACL acl = database.getACL();
+			boolean toSave = false;
+
+			if (json.containsKey("roles")) {
+				toSave = parseRoles(acl, (JSONArray) json.get("roles")) || toSave;
+			}
+
+			if (json.containsKey("ACLEntries")) {
+				toSave = parseACLEntries(acl, (JSONArray) json.get("ACLEntries")) || toSave;
+			}
+
+			if (toSave) {
+				log("> ACL: updated & saved");
+				acl.save();
+			}
+			else {
+				log("> ACL: no updates");
+			}
+
+		} catch (NotesException e) {
+			e.printStackTrace();
+			log(e);
+		}
+
+	}
+
+	private boolean parseRoles(ACL acl, JSONArray array) {
+		boolean toSave = false;
+		if (array == null || array.size() == 0) return toSave;
+
+		try {
+			Vector<?> roles = acl.getRoles();
+			for(int i=0; i<array.size(); i++) {
+				String val = (String) array.get(i);
+
+				if (!roles.contains(val)) {
+					acl.addRole(val);
+					log(String.format("> ACL: added role (%s)", val));
+					toSave = true;
+				}
+			}
+		} catch (NotesException e) {
+			e.printStackTrace();
+			log(e);
+		}
+		
+		return toSave;
+	}
+
+	private boolean parseACLEntries(ACL acl, JSONArray array) {
+		boolean toSave = false;
+		if (array == null || array.size() == 0) return toSave;
+
+		for(int i=0; i<array.size(); i++) {
+			JSONObject obj = (JSONObject) array.get(i);
+
+			toSave = parseACLEntry(acl, obj) || toSave;
+		}
+		
+		return toSave;
+	}
+	
+	private boolean parseACLEntry(ACL acl, JSONObject obj) {
+		boolean toSave = false;
+		if (!obj.containsKey("name")) return toSave;
+
+		try {
+			String name = (String) obj.get("name");
+			ACLEntry entry = acl.getEntry(name);
+			
+			// 1. get/create entry (default no access)
+			if (entry == null) {
+				entry = acl.createACLEntry(name, ACL.LEVEL_NOACCESS);
+				log(String.format("> ACL: new entry (%s)", name));
+				toSave = true;
+			}
+			
+			// 2. level
+			if (obj.containsKey("level")) {
+				String sLevel = (String) obj.get("level");
+				int level = ACL.LEVEL_NOACCESS;
+				if ("noAccess".equalsIgnoreCase(sLevel)) {
+					level = ACL.LEVEL_NOACCESS;
+				}
+				else if("depositor".equalsIgnoreCase(sLevel)) {
+					level = ACL.LEVEL_DEPOSITOR;
+				}
+				else if("reader".equalsIgnoreCase(sLevel)) {
+					level = ACL.LEVEL_READER;
+				}
+				else if("author".equalsIgnoreCase(sLevel)) {
+					level = ACL.LEVEL_AUTHOR;
+				}
+				else if("editor".equalsIgnoreCase(sLevel)) {
+					level = ACL.LEVEL_EDITOR;
+				}
+				else if("designer".equalsIgnoreCase(sLevel)) {
+					level = ACL.LEVEL_DESIGNER;
+				}
+				else if("manager".equalsIgnoreCase(sLevel)) {
+					level = ACL.LEVEL_MANAGER;
+				}
+				
+				if (entry.getLevel() != level) {
+					entry.setLevel(level);
+					toSave = true;
+					log(String.format(">> ACLEntry: level (%s)", sLevel));
+				}
+			}
+
+			// 3. type
+			if (obj.containsKey("type")) {
+				String sType = (String) obj.get("type");
+				int type = ACLEntry.TYPE_UNSPECIFIED;
+				if ("unspecified".equalsIgnoreCase(sType)) {
+					type = ACLEntry.TYPE_UNSPECIFIED;
+				}
+				else if("person".equalsIgnoreCase(sType)) {
+					type = ACLEntry.TYPE_PERSON;
+				}
+				else if("server".equalsIgnoreCase(sType)) {
+					type = ACLEntry.TYPE_SERVER;
+				}
+				else if("personGroup".equalsIgnoreCase(sType)) {
+					type = ACLEntry.TYPE_PERSON_GROUP;
+				}
+				else if("serverGroup".equalsIgnoreCase(sType)) {
+					type = ACLEntry.TYPE_SERVER_GROUP;
+				}
+				else if("mixedGroup".equalsIgnoreCase(sType)) {
+					type = ACLEntry.TYPE_MIXED_GROUP;
+				}
+				
+				if (entry.getUserType() != type) {
+					entry.setUserType(type);
+					log(String.format(">> ACLEntry: type (%s)", sType));
+					toSave = true;
+				}
+			}
+			
+			// 4. canCreateDocuments
+			if (obj.containsKey("canCreateDocuments")) {
+				boolean canCreateDocuments = (Boolean) obj.get("canCreateDocuments");
+				if (entry.isCanCreateDocuments() != canCreateDocuments) {
+					entry.setCanCreateDocuments(canCreateDocuments);
+					log(String.format(">> ACLEntry: setCanCreateDocuments (%b)", canCreateDocuments));
+					toSave = true;
+					
+				}
+			}
+			
+			// 5. canDeleteDocuments
+			if (obj.containsKey("canDeleteDocuments")) {
+				boolean canDeleteDocuments = (Boolean) obj.get("canDeleteDocuments");
+				if (entry.isCanDeleteDocuments() != canDeleteDocuments) {
+					entry.setCanDeleteDocuments(canDeleteDocuments);
+					log(String.format(">> ACLEntry: canDeleteDocuments (%b)", canDeleteDocuments));
+					toSave = true;
+				}
+			}
+
+			// 6. canCreatePersonalAgent
+			if (obj.containsKey("canCreatePersonalAgent")) {
+				boolean canCreatePersonalAgent = (Boolean) obj.get("canCreatePersonalAgent");
+				if (entry.isCanCreatePersonalAgent() != canCreatePersonalAgent) {
+					entry.setCanCreatePersonalAgent(canCreatePersonalAgent);
+					log(String.format(">> ACLEntry: canCreatePersonalAgent (%b)", canCreatePersonalAgent));
+					toSave = true;
+				}
+			}
+			
+			// 7. canCreatePersonalFolder
+			if (obj.containsKey("canCreatePersonalFolder")) {
+				boolean canCreatePersonalFolder = (Boolean) obj.get("canCreatePersonalFolder");
+				if (entry.isCanCreatePersonalFolder() != canCreatePersonalFolder) {
+					entry.setCanCreatePersonalFolder(canCreatePersonalFolder);
+					log(String.format(">> ACLEntry: canCreatePersonalFolder (%b)", canCreatePersonalFolder));
+					toSave = true;
+				}
+			}
+			
+			// 8. canCreateSharedFolder
+			if (obj.containsKey("canCreateSharedFolder")) {
+				boolean canCreateSharedFolder = (Boolean) obj.get("canCreateSharedFolder");
+				if (entry.isCanCreateSharedFolder() != canCreateSharedFolder) {
+					entry.setCanCreateSharedFolder(canCreateSharedFolder);
+					log(String.format("> ACL: entry canCreateSharedFolder (%b)", canCreateSharedFolder));
+					toSave = true;
+				}
+			}
+			
+			// 9. canCreateLSOrJavaAgent
+			if (obj.containsKey("canCreateLSOrJavaAgent")) {
+				boolean canCreateLSOrJavaAgent = (Boolean) obj.get("canCreateLSOrJavaAgent");
+				if (entry.isCanCreateLSOrJavaAgent() != canCreateLSOrJavaAgent) {
+					entry.setCanCreateLSOrJavaAgent(canCreateLSOrJavaAgent);
+					log(String.format(">> ACLEntry: canCreateLSOrJavaAgent (%b)", canCreateLSOrJavaAgent));
+					toSave = true;
+				}
+			}
+
+			// 10. isPublicReader
+			if (obj.containsKey("isPublicReader")) {
+				boolean isPublicReader = (Boolean) obj.get("isPublicReader");
+				if (entry.isPublicReader() != isPublicReader) {
+					entry.setPublicReader(isPublicReader);
+					log(String.format(">> ACLEntry: isPublicReader (%b)", isPublicReader));
+					toSave = true;
+				}
+			}
+
+			// 11. isPublicWriter
+			if (obj.containsKey("isPublicWriter")) {
+				boolean isPublicWriter = (Boolean) obj.get("isPublicWriter");
+				if (entry.isPublicWriter() != isPublicWriter) {
+					entry.setPublicWriter(isPublicWriter);
+					log(String.format(">> ACLEntry: isPublicWriter (%b)", isPublicWriter));
+					toSave = true;
+				}
+			}
+			
+			// 12. canReplicateOrCopyDocuments
+			if (obj.containsKey("canReplicateOrCopyDocuments")) {
+				boolean canReplicateOrCopyDocuments = (Boolean) obj.get("canReplicateOrCopyDocuments");
+				if (entry.isCanReplicateOrCopyDocuments() != canReplicateOrCopyDocuments) {
+					entry.setCanReplicateOrCopyDocuments(canReplicateOrCopyDocuments);
+					log(String.format(">> ACLEntry: canReplicateOrCopyDocuments (%b)", canReplicateOrCopyDocuments));
+					toSave = true;
+				}
+			}
+			
+			// 13. roles
+			if (obj.containsKey("roles")) {
+				Vector<?> aclRoles = acl.getRoles();
+				JSONArray roles = (JSONArray) obj.get("roles");
+
+				for(int i=0; i<roles.size(); i++) {
+					String role = (String) roles.get(i);
+					if (aclRoles.contains(role) && !entry.isRoleEnabled(role)) {
+						entry.enableRole(role);
+						log(String.format(">> ACLEntry: enableRole (%s)", role));
+						toSave = true;
+					}
+				}
+			}
+		} catch (NotesException e) {
+			e.printStackTrace();
+			log(e);
+		}
+		
+		return toSave;
 	}
 
 	private void parseDocuments(Database database, JSONArray array) {
@@ -548,7 +812,7 @@ public class JSONRules {
 		if (message == null || message.isEmpty()) {
 			message = "an undefined exception was thrown";
 		}
-		
+
 		m_logBuilder.append(message);
 		m_logBuilder.append(System.getProperty("line.separator"));	
 	}
@@ -557,7 +821,7 @@ public class JSONRules {
 		if (m_logBuilder == null) {
 			m_logBuilder = new StringBuilder();
 		}
-		
+
 		System.out.println(o.toString());
 		m_logBuilder.append(o.toString());
 		m_logBuilder.append(System.getProperty("line.separator"));

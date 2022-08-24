@@ -33,12 +33,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.15 (runjson)";
+		return "0.6.15 (runjson, acl)";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-08-16 16:30";
+		return "2022-08-24 16:30";
 	}
 
 	@Override
