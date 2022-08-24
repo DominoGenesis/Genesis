@@ -53,13 +53,14 @@ public class EventRunJSON extends Event {
 			this.getLogger().info(String.format("> %s is going to be processed", file.getName()));
 
 			JSONRules rules = new JSONRules(session, Catalog, JavaAddinConfig, JavaAddinCommand, getLogger());
-			rules.execute(fr);
-			fr.close();
+			boolean res = rules.execute(fr);
+			if (!res) {
+				message = "The json file can't be processed";
+			}
 
+			fr.close();
 			file.delete();
 			this.getLogger().info(String.format("> file has been processed and deleted: %s", file.getName()));
-
-			message = "The json file can't be processed";
 		} catch (Exception e) {
 			this.getLogger().severe(e);
 			e.printStackTrace();
