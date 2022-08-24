@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
@@ -34,6 +33,7 @@ public class JSONRules {
 	private String m_commandPath;
 	private GLogger m_logger;
 	private StringBuilder m_logBuilder;
+	private String m_error;
 
 	private final String JSON_VERSION = "1.0.0";
 
@@ -43,6 +43,7 @@ public class JSONRules {
 		m_configPath = configPath;
 		m_commandPath = commandPath;
 		m_logger = logger;
+		m_error = null;
 	}
 
 	public boolean execute(String json) {
@@ -447,7 +448,6 @@ public class JSONRules {
 			}
 
 		} catch (NotesException e) {
-			e.printStackTrace();
 			log(e);
 		}
 
@@ -469,7 +469,6 @@ public class JSONRules {
 				}
 			}
 		} catch (NotesException e) {
-			e.printStackTrace();
 			log(e);
 		}
 
@@ -655,7 +654,6 @@ public class JSONRules {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
 			log(e);
 		}
 
@@ -794,7 +792,7 @@ public class JSONRules {
 		if (message == null || message.isEmpty()) {
 			message = "an undefined exception was thrown";
 		}
-
+		
 		m_logBuilder.append(message);
 		m_logBuilder.append(System.getProperty("line.separator"));	
 	}
