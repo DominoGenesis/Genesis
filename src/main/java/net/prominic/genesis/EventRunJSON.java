@@ -52,6 +52,6 @@ public class EventRunJSON extends Event {
 		} catch (Exception e) {
 			this.getLogger().severe(e);
 			e.printStackTrace();
-		}					
+		}
 	}
 }

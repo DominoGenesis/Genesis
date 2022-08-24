@@ -472,7 +472,7 @@ public class JSONRules {
 			e.printStackTrace();
 			log(e);
 		}
-		
+
 		return toSave;
 	}
 
@@ -485,10 +485,10 @@ public class JSONRules {
 
 			toSave = parseACLEntry(acl, obj) || toSave;
 		}
-		
+
 		return toSave;
 	}
-	
+
 	private boolean parseACLEntry(ACL acl, JSONObject obj) {
 		boolean toSave = false;
 		if (!obj.containsKey("name")) return toSave;
@@ -496,14 +496,14 @@ public class JSONRules {
 		try {
 			String name = (String) obj.get("name");
 			ACLEntry entry = acl.getEntry(name);
-			
+
 			// 1. get/create entry (default no access)
 			if (entry == null) {
 				entry = acl.createACLEntry(name, ACL.LEVEL_NOACCESS);
 				log(String.format("> ACL: new entry (%s)", name));
 				toSave = true;
 			}
-			
+
 			// 2. level
 			if (obj.containsKey("level")) {
 				String sLevel = (String) obj.get("level");
@@ -529,7 +529,7 @@ public class JSONRules {
 				else if("manager".equalsIgnoreCase(sLevel)) {
 					level = ACL.LEVEL_MANAGER;
 				}
-				
+
 				if (entry.getLevel() != level) {
 					entry.setLevel(level);
 					toSave = true;
@@ -559,112 +559,101 @@ public class JSONRules {
 				else if("mixedGroup".equalsIgnoreCase(sType)) {
 					type = ACLEntry.TYPE_MIXED_GROUP;
 				}
-				
+
 				if (entry.getUserType() != type) {
 					entry.setUserType(type);
 					log(String.format(">> ACLEntry: type (%s)", sType));
 					toSave = true;
 				}
 			}
-			
+
 			// 4. canCreateDocuments
-			if (obj.containsKey("canCreateDocuments")) {
-				boolean canCreateDocuments = (Boolean) obj.get("canCreateDocuments");
-				if (entry.isCanCreateDocuments() != canCreateDocuments) {
-					entry.setCanCreateDocuments(canCreateDocuments);
-					log(String.format(">> ACLEntry: setCanCreateDocuments (%b)", canCreateDocuments));
-					toSave = true;
-					
-				}
+			boolean canCreateDocuments = obj.containsKey("canCreateDocuments") && (Boolean) obj.get("canCreateDocuments");
+			if (entry.isCanCreateDocuments() != canCreateDocuments) {
+				entry.setCanCreateDocuments(canCreateDocuments);
+				log(String.format(">> ACLEntry: setCanCreateDocuments (%b)", canCreateDocuments));
+				toSave = true;
+
 			}
-			
+
 			// 5. canDeleteDocuments
-			if (obj.containsKey("canDeleteDocuments")) {
-				boolean canDeleteDocuments = (Boolean) obj.get("canDeleteDocuments");
-				if (entry.isCanDeleteDocuments() != canDeleteDocuments) {
-					entry.setCanDeleteDocuments(canDeleteDocuments);
-					log(String.format(">> ACLEntry: canDeleteDocuments (%b)", canDeleteDocuments));
-					toSave = true;
-				}
+			boolean canDeleteDocuments = obj.containsKey("canDeleteDocuments") && (Boolean) obj.get("canDeleteDocuments");
+			if (entry.isCanDeleteDocuments() != canDeleteDocuments) {
+				entry.setCanDeleteDocuments(canDeleteDocuments);
+				log(String.format(">> ACLEntry: canDeleteDocuments (%b)", canDeleteDocuments));
+				toSave = true;
 			}
 
 			// 6. canCreatePersonalAgent
-			if (obj.containsKey("canCreatePersonalAgent")) {
-				boolean canCreatePersonalAgent = (Boolean) obj.get("canCreatePersonalAgent");
-				if (entry.isCanCreatePersonalAgent() != canCreatePersonalAgent) {
-					entry.setCanCreatePersonalAgent(canCreatePersonalAgent);
-					log(String.format(">> ACLEntry: canCreatePersonalAgent (%b)", canCreatePersonalAgent));
-					toSave = true;
-				}
+			boolean canCreatePersonalAgent = obj.containsKey("canCreatePersonalAgent") && (Boolean) obj.get("canCreatePersonalAgent");
+			if (entry.isCanCreatePersonalAgent() != canCreatePersonalAgent) {
+				entry.setCanCreatePersonalAgent(canCreatePersonalAgent);
+				log(String.format(">> ACLEntry: canCreatePersonalAgent (%b)", canCreatePersonalAgent));
+				toSave = true;
 			}
-			
+
 			// 7. canCreatePersonalFolder
-			if (obj.containsKey("canCreatePersonalFolder")) {
-				boolean canCreatePersonalFolder = (Boolean) obj.get("canCreatePersonalFolder");
-				if (entry.isCanCreatePersonalFolder() != canCreatePersonalFolder) {
-					entry.setCanCreatePersonalFolder(canCreatePersonalFolder);
-					log(String.format(">> ACLEntry: canCreatePersonalFolder (%b)", canCreatePersonalFolder));
-					toSave = true;
-				}
+			boolean canCreatePersonalFolder = obj.containsKey("canCreatePersonalFolder") && (Boolean) obj.get("canCreatePersonalFolder");
+			if (entry.isCanCreatePersonalFolder() != canCreatePersonalFolder) {
+				entry.setCanCreatePersonalFolder(canCreatePersonalFolder);
+				log(String.format(">> ACLEntry: canCreatePersonalFolder (%b)", canCreatePersonalFolder));
+				toSave = true;
 			}
-			
+
 			// 8. canCreateSharedFolder
-			if (obj.containsKey("canCreateSharedFolder")) {
-				boolean canCreateSharedFolder = (Boolean) obj.get("canCreateSharedFolder");
-				if (entry.isCanCreateSharedFolder() != canCreateSharedFolder) {
-					entry.setCanCreateSharedFolder(canCreateSharedFolder);
-					log(String.format("> ACL: entry canCreateSharedFolder (%b)", canCreateSharedFolder));
-					toSave = true;
-				}
+			boolean canCreateSharedFolder = obj.containsKey("canCreateSharedFolder") && (Boolean) obj.get("canCreateSharedFolder");
+			if (entry.isCanCreateSharedFolder() != canCreateSharedFolder) {
+				entry.setCanCreateSharedFolder(canCreateSharedFolder);
+				log(String.format("> ACL: entry canCreateSharedFolder (%b)", canCreateSharedFolder));
+				toSave = true;
 			}
-			
+
 			// 9. canCreateLSOrJavaAgent
-			if (obj.containsKey("canCreateLSOrJavaAgent")) {
-				boolean canCreateLSOrJavaAgent = (Boolean) obj.get("canCreateLSOrJavaAgent");
-				if (entry.isCanCreateLSOrJavaAgent() != canCreateLSOrJavaAgent) {
-					entry.setCanCreateLSOrJavaAgent(canCreateLSOrJavaAgent);
-					log(String.format(">> ACLEntry: canCreateLSOrJavaAgent (%b)", canCreateLSOrJavaAgent));
-					toSave = true;
-				}
+			boolean canCreateLSOrJavaAgent = obj.containsKey("canCreateLSOrJavaAgent") && (Boolean) obj.get("canCreateLSOrJavaAgent");
+			if (entry.isCanCreateLSOrJavaAgent() != canCreateLSOrJavaAgent) {
+				entry.setCanCreateLSOrJavaAgent(canCreateLSOrJavaAgent);
+				log(String.format(">> ACLEntry: canCreateLSOrJavaAgent (%b)", canCreateLSOrJavaAgent));
+				toSave = true;
 			}
 
 			// 10. isPublicReader
-			if (obj.containsKey("isPublicReader")) {
-				boolean isPublicReader = (Boolean) obj.get("isPublicReader");
-				if (entry.isPublicReader() != isPublicReader) {
-					entry.setPublicReader(isPublicReader);
-					log(String.format(">> ACLEntry: isPublicReader (%b)", isPublicReader));
-					toSave = true;
-				}
+			boolean isPublicReader = obj.containsKey("isPublicReader") && (Boolean) obj.get("isPublicReader");
+			if (entry.isPublicReader() != isPublicReader) {
+				entry.setPublicReader(isPublicReader);
+				log(String.format(">> ACLEntry: isPublicReader (%b)", isPublicReader));
+				toSave = true;
 			}
 
 			// 11. isPublicWriter
-			if (obj.containsKey("isPublicWriter")) {
-				boolean isPublicWriter = (Boolean) obj.get("isPublicWriter");
-				if (entry.isPublicWriter() != isPublicWriter) {
-					entry.setPublicWriter(isPublicWriter);
-					log(String.format(">> ACLEntry: isPublicWriter (%b)", isPublicWriter));
-					toSave = true;
-				}
+			boolean isPublicWriter = obj.containsKey("isPublicWriter") && (Boolean) obj.get("isPublicWriter");
+			if (entry.isPublicWriter() != isPublicWriter) {
+				entry.setPublicWriter(isPublicWriter);
+				log(String.format(">> ACLEntry: isPublicWriter (%b)", isPublicWriter));
+				toSave = true;
 			}
-			
+
 			// 12. canReplicateOrCopyDocuments
-			if (obj.containsKey("canReplicateOrCopyDocuments")) {
-				boolean canReplicateOrCopyDocuments = (Boolean) obj.get("canReplicateOrCopyDocuments");
-				if (entry.isCanReplicateOrCopyDocuments() != canReplicateOrCopyDocuments) {
-					entry.setCanReplicateOrCopyDocuments(canReplicateOrCopyDocuments);
-					log(String.format(">> ACLEntry: canReplicateOrCopyDocuments (%b)", canReplicateOrCopyDocuments));
-					toSave = true;
-				}
+			boolean canReplicateOrCopyDocuments = obj.containsKey("canReplicateOrCopyDocuments") && (Boolean) obj.get("canReplicateOrCopyDocuments");
+			if (entry.isCanReplicateOrCopyDocuments() != canReplicateOrCopyDocuments) {
+				entry.setCanReplicateOrCopyDocuments(canReplicateOrCopyDocuments);
+				log(String.format(">> ACLEntry: canReplicateOrCopyDocuments (%b)", canReplicateOrCopyDocuments));
+				toSave = true;
 			}
-			
+
 			// 13. roles
 			if (obj.containsKey("roles")) {
 				Vector<?> aclRoles = acl.getRoles();
+				for(int j=0;j<aclRoles.size();j++) {
+					log(aclRoles.get(j));
+				}
+				
 				JSONArray roles = (JSONArray) obj.get("roles");
 
 				for(int i=0; i<roles.size(); i++) {
-					String role = (String) roles.get(i);
+					String role = String.format("[%s]", (String) roles.get(i));
+					
+					log(role);
+					log(String.format(">> ACLEntry: (%b) (%b)", aclRoles.contains(role), entry.isRoleEnabled(role)));
 					if (aclRoles.contains(role) && !entry.isRoleEnabled(role)) {
 						entry.enableRole(role);
 						log(String.format(">> ACLEntry: enableRole (%s)", role));
@@ -672,11 +661,11 @@ public class JSONRules {
 					}
 				}
 			}
-		} catch (NotesException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			log(e);
 		}
-		
+
 		return toSave;
 	}
 
