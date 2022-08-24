@@ -643,17 +643,10 @@ public class JSONRules {
 			// 13. roles
 			if (obj.containsKey("roles")) {
 				Vector<?> aclRoles = acl.getRoles();
-				for(int j=0;j<aclRoles.size();j++) {
-					log(aclRoles.get(j));
-				}
-				
 				JSONArray roles = (JSONArray) obj.get("roles");
-
 				for(int i=0; i<roles.size(); i++) {
 					String role = String.format("[%s]", (String) roles.get(i));
 					
-					log(role);
-					log(String.format(">> ACLEntry: (%b) (%b)", aclRoles.contains(role), entry.isRoleEnabled(role)));
 					if (aclRoles.contains(role) && !entry.isRoleEnabled(role)) {
 						entry.enableRole(role);
 						log(String.format(">> ACLEntry: enableRole (%s)", role));
