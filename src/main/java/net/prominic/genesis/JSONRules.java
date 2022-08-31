@@ -33,7 +33,6 @@ public class JSONRules {
 	private String m_commandPath;
 	private GLogger m_logger;
 	private StringBuilder m_logBuilder;
-	private String m_error;
 
 	private final String JSON_VERSION = "1.0.0";
 
@@ -43,7 +42,6 @@ public class JSONRules {
 		m_configPath = configPath;
 		m_commandPath = commandPath;
 		m_logger = logger;
-		m_error = null;
 	}
 
 	public boolean execute(String json) {
@@ -86,6 +84,17 @@ public class JSONRules {
 			};
 		}
 
+		// check require
+		if (obj.containsKey("require")) {
+			JSONObject requireObj = (JSONObject)obj.get("require");
+			boolean valid = isRequire(requireObj);
+			if (!valid) {
+				log("This app requires");
+				log(requireObj);
+				return false;
+			};
+		}
+
 		// if error
 		if (obj.containsKey("error")) {
 			String error = (String) obj.get("error");	
@@ -114,6 +123,34 @@ public class JSONRules {
 		}
 
 		return true;
+	}
+
+	private boolean isRequire(JSONObject obj) {
+		boolean res = true;
+		try {
+			if (obj.containsKey("notesversion")) {
+				String[] requireVersion = ((String) obj.get("notesversion")).split("//.");
+				String[] sessionVersion = m_session.getNotesVersion().split("//.");
+
+				for(int i=0; i<=2; i++) {
+					int requireSubVersion = Integer.parseInt(requireVersion[i]);
+					int sessionSubVersion = Integer.parseInt(sessionVersion[i]);
+
+					if (sessionSubVersion > requireSubVersion) {
+						i = 2;
+					}
+					else if(sessionSubVersion < requireSubVersion) {
+						res = false;
+						i = 2;
+					}
+				}
+			}
+		} catch (NotesException e) {
+			e.printStackTrace();
+			res = false;
+		}
+
+		return res;
 	}
 
 	private boolean isValidVersionJSON(String versionjson) {
@@ -645,7 +682,7 @@ public class JSONRules {
 				JSONArray roles = (JSONArray) obj.get("roles");
 				for(int i=0; i<roles.size(); i++) {
 					String role = String.format("[%s]", (String) roles.get(i));
-					
+
 					if (aclRoles.contains(role) && !entry.isRoleEnabled(role)) {
 						entry.enableRole(role);
 						log(String.format(">> ACLEntry: enableRole (%s)", role));
@@ -792,7 +829,7 @@ public class JSONRules {
 		if (message == null || message.isEmpty()) {
 			message = "an undefined exception was thrown";
 		}
-		
+
 		m_logBuilder.append(message);
 		m_logBuilder.append(System.getProperty("line.separator"));	
 	}
