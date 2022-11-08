@@ -721,63 +721,69 @@ public class JSONRules {
 
 	private void createDocuments(Database database, JSONObject json, boolean computeWithForm) {
 		JSONObject items = (JSONObject) json.get("items");
+		String evaluate = (String) json.get("evaluate");
 		Document doc = null;
 		try {
 			doc = database.createDocument();
-			updateDocument(doc, items, computeWithForm);
+			updateDocument(doc, evaluate, items, computeWithForm);
 		} catch (NotesException e) {
 			log(e);
 		}
 	}
 
 	private void updateDocuments(Database database, JSONObject json, boolean computeWithForm) {
-		if (!json.containsKey("items")) {
-			log("> documents.items - not found");
-			return;
-		};
-
 		if (!json.containsKey("search")) {
 			log("> documents.search - not found");
 			return;
 		};
-		
+
 		JSONObject items = (JSONObject) json.get("items");
+		String evaluate = (String) json.get("evaluate");
 		JSONObject search = (JSONObject) json.get("search");
 		try {
 			if (!search.containsKey("formula")) {
 				log("> documents.search.formula - not found");
 				return;
 			};
-			
-			String formula = (String) search.get("formula");
-			Long number = (Long) (search.containsKey("number") ? search.get("number") : 0);
 
-			DocumentCollection col = database.search(formula, null, number.intValue());
+			String formula = (String) search.get("formula");
+			Long max = search.containsKey("max") ? (Long) search.get("max") : 0;
+
+			DocumentCollection col = database.search(formula, null, max.intValue());
 			log(String.format("> %s found: %d", formula, col.getCount()));
 			if (col.getCount() == 0) return;
 
 			Document doc = col.getFirstDocument();
-			updateDocument(doc, items, computeWithForm);
+			while (doc != null) {
+				updateDocument(doc, evaluate, items, computeWithForm);
+				doc = col.getNextDocument();
+			}
 		} catch (NotesException e) {
 			log(e);
 		}
 	}
 
-	private void updateDocument(Document doc, JSONObject items, boolean computeWithForm) throws NotesException {
-		@SuppressWarnings("unchecked")
-		Set<Map.Entry<String, Object>> entries = items.entrySet();
-		for (Map.Entry<String, Object> entry : entries) {
-			String name = entry.getKey();
-			Object value = entry.getValue();
-			
-			if (value instanceof JSONArray) {
-			    JSONArray ja = (JSONArray) value;
-			    Vector<Object> v = new Vector<Object>();
-			    Collections.addAll(v, ja.toArray());
-				doc.replaceItemValue(name, v);
-			} else {
-				doc.replaceItemValue(name, value);
-			}
+	private void updateDocument(Document doc, String evaluate, JSONObject items, boolean computeWithForm) throws NotesException {
+		if (evaluate != null) {
+			m_session.evaluate(evaluate, doc);
+		}
+
+		if (items != null) {
+			@SuppressWarnings("unchecked")
+			Set<Map.Entry<String, Object>> entries = items.entrySet();
+			for (Map.Entry<String, Object> entry : entries) {
+				String name = entry.getKey();
+				Object value = entry.getValue();
+
+				if (value instanceof JSONArray) {
+					JSONArray ja = (JSONArray) value;
+					Vector<Object> v = new Vector<Object>();
+					Collections.addAll(v, ja.toArray());
+					doc.replaceItemValue(name, v);
+				} else {
+					doc.replaceItemValue(name, value);
+				}
+			}	
 		}
 
 		if (computeWithForm) {
