@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
@@ -499,7 +500,11 @@ public class JSONRules {
 			for(int i=0; i<array.size(); i++) {
 				String val = (String) array.get(i);
 
-				if (!roles.contains(val)) {
+				String valAsRole = "["+val+"]";
+				if (roles.contains(valAsRole)) {
+					log(String.format("> ACL: role (%s) already exists", val));
+				}
+				else {
 					acl.addRole(val);
 					log(String.format("> ACL: added role (%s)", val));
 					toSave = true;
@@ -726,15 +731,29 @@ public class JSONRules {
 	}
 
 	private void updateDocuments(Database database, JSONObject json, boolean computeWithForm) {
+		if (!json.containsKey("items")) {
+			log("> documents.items - not found");
+			return;
+		};
+
+		if (!json.containsKey("search")) {
+			log("> documents.search - not found");
+			return;
+		};
+		
 		JSONObject items = (JSONObject) json.get("items");
 		JSONObject search = (JSONObject) json.get("search");
-
 		try {
+			if (!search.containsKey("formula")) {
+				log("> documents.search.formula - not found");
+				return;
+			};
+			
 			String formula = (String) search.get("formula");
-
 			Long number = (Long) (search.containsKey("number") ? search.get("number") : 0);
 
 			DocumentCollection col = database.search(formula, null, number.intValue());
+			log(String.format("> %s found: %d", formula, col.getCount()));
 			if (col.getCount() == 0) return;
 
 			Document doc = col.getFirstDocument();
@@ -749,9 +768,16 @@ public class JSONRules {
 		Set<Map.Entry<String, Object>> entries = items.entrySet();
 		for (Map.Entry<String, Object> entry : entries) {
 			String name = entry.getKey();
-			String value = (String) entry.getValue();
-			doc.replaceItemValue(name, value);
-			//			doc.replaceItemValue(name, this.m_session.evaluate(value));
+			Object value = entry.getValue();
+			
+			if (value instanceof JSONArray) {
+			    JSONArray ja = (JSONArray) value;
+			    Vector<Object> v = new Vector<Object>();
+			    Collections.addAll(v, ja.toArray());
+				doc.replaceItemValue(name, v);
+			} else {
+				doc.replaceItemValue(name, value);
+			}
 		}
 
 		if (computeWithForm) {
