@@ -33,7 +33,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.17 (runjson, evaluate)";
+		return "0.6.18 (runjson, export ot file)";
 	}
 
 	@Override

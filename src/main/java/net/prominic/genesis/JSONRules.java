@@ -1,6 +1,7 @@
 package net.prominic.genesis;
 
 import java.io.File;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
@@ -713,9 +714,56 @@ public class JSONRules {
 			if ("create".equalsIgnoreCase(action)) {
 				createDocuments(database, doc, computeWithForm);
 			}
+			else if("export".equalsIgnoreCase(action)) {
+				exportDocuments(database, doc);
+			}
 			else {
 				updateDocuments(database, doc, computeWithForm);
 			}
+		}
+	}
+
+	private void exportDocuments(Database database, JSONObject json) {
+		// search formula
+		if (!json.containsKey("search")) {
+			log("> documents.search - not found");
+			return;
+		};
+		JSONObject search = (JSONObject) json.get("search");
+
+		// evaluate - content of file
+		if (!json.containsKey("evaluate")) {
+			log("> documents.evaluate - not found");
+			return;
+		};
+		String evaluate = (String) json.get("evaluate");
+		String filePath = (String) json.get("filePath");
+		try {
+			if (!search.containsKey("formula")) {
+				log("> documents.search.formula - not found");
+				return;
+			};
+
+			String formula = (String) search.get("formula");
+			Long max = search.containsKey("max") ? (Long) search.get("max") : 0;
+
+			DocumentCollection col = database.search(formula, null, max.intValue());
+			log(String.format("> %s found: %d", formula, col.getCount()));
+			if (col.getCount() == 0) return;
+			
+			StringBuilder sb = new StringBuilder();
+			
+			Document doc = col.getFirstDocument();
+			while (doc != null) {
+				Vector<?> content = m_session.evaluate(evaluate, doc);
+				
+				sb.append(content.get(0));
+				doc = col.getNextDocument();
+			}
+			
+			FileUtils.writeFile(new File(filePath), sb.toString());
+		} catch (NotesException e) {
+			log(e);
 		}
 	}
 
