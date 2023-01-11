@@ -1,13 +1,10 @@
 package net.prominic.utils;
 
-import lotus.domino.Session;
 import lotus.domino.Database;
-import lotus.domino.DateTime;
 import lotus.domino.Document;
 import lotus.domino.NoteCollection;
 import lotus.domino.NotesException;
 import lotus.domino.NotesThread;
-import lotus.domino.Registration;
 
 public class DominoUtils {
 	public static void sign(Database database) {
@@ -44,62 +41,7 @@ public class DominoUtils {
 			NotesThread.stermThread();
 		}
 	}
-
-	public static void crossCertify(Session session, String regServer, String certId, String userId) {
-		try {
-			NotesThread.sinitThread();
-			
-			log("[CrossCertify] - started");
-			
-			Registration reg = session.createRegistration();
-			reg.setRegistrationServer(regServer);
-			reg.setCertifierIDFile(certId);
-
-			if (reg.crossCertify(userId)) {
-				log("[CrossCertify] - succeeded");
-			}
-			else {
-				log("[CrossCertify] - failed");
-			}
-			
-			reg.recycle();
-		} catch(NotesException e) {
-			log(String.format("[CrossCertify] failed: %d %s", e.id, e.text));
-			e.printStackTrace();
-		}
-		finally {
-			NotesThread.stermThread();
-		}
-	}
 	
-	public static void crossCertify(Session session, String regServer, String certId, String certPassword, DateTime expirationDate, String userId) {
-		try {
-//			NotesThread.sinitThread();
-			
-			log("[CrossCertify] - started (1)");
-			
-			Registration reg = session.createRegistration();
-			reg.setRegistrationServer(regServer);
-			reg.setCertifierIDFile(certId);
-			reg.setExpiration(expirationDate);
-
-			if (reg.crossCertify(userId, certPassword, "Programmatically cross certified (using Genesis)")) {
-				log("[CrossCertify] - succeeded");
-			}
-			else {
-				log("[CrossCertify] - failed");
-			}
-			
-			reg.recycle();
-		} catch(NotesException e) {
-			log(String.format("[CrossCertify] failed: %d %s", e.id, e.text));
-			e.printStackTrace();
-		}
-		finally {
-//			NotesThread.stermThread();
-		}
-	}
-
 	private static void log(String s) {
 		System.out.println(s);
 	}
