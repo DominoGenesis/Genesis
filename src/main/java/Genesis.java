@@ -15,8 +15,8 @@ import net.prominic.genesis.EventRunJSON;
 import net.prominic.genesis.EventUpdate;
 import net.prominic.genesis.JSONRules;
 import net.prominic.genesis.ProgramConfig;
-import net.prominic.gja_v082.GConfig;
-import net.prominic.gja_v082.JavaServerAddinGenesis;
+import net.prominic.gja_v083.GConfig;
+import net.prominic.gja_v083.JavaServerAddinGenesis;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 

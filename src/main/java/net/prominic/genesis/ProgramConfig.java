@@ -1,12 +1,13 @@
 package net.prominic.genesis;
 
 import lotus.domino.Database;
+
 import lotus.domino.DateTime;
 import lotus.domino.Document;
 import lotus.domino.DocumentCollection;
 import lotus.domino.NotesException;
 import lotus.domino.View;
-import net.prominic.gja_v082.GLogger;
+import net.prominic.gja_v083.GLogger;
 
 public class ProgramConfig {
 	private final static String COMMENT_PROMINIC = "[PROMINIC.NET] (created automatically). Please do not delete it.\nPlease contact Support@Prominic.NET with any questions about this program document.";

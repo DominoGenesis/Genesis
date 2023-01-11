@@ -7,8 +7,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 
 import lotus.domino.Session;
-import net.prominic.gja_v082.Event;
-import net.prominic.gja_v082.GLogger;
+import net.prominic.gja_v083.Event;
+import net.prominic.gja_v083.GLogger;
 
 public class EventRunJSON extends Event {
 	public Session session = null;

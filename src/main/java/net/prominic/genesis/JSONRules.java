@@ -1,7 +1,6 @@
 package net.prominic.genesis;
 
 import java.io.File;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
@@ -22,8 +21,8 @@ import lotus.domino.Database;
 import lotus.domino.DocumentCollection;
 import lotus.domino.Document;
 import lotus.domino.NotesException;
-import net.prominic.gja_v082.GConfig;
-import net.prominic.gja_v082.GLogger;
+import net.prominic.gja_v083.GConfig;
+import net.prominic.gja_v083.GLogger;
 import net.prominic.util.FileUtils;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;

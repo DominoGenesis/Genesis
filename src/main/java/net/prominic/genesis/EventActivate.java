@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
-import net.prominic.gja_v082.Event;
-import net.prominic.gja_v082.GConfig;
-import net.prominic.gja_v082.GLogger;
+import net.prominic.gja_v083.Event;
+import net.prominic.gja_v083.GConfig;
+import net.prominic.gja_v083.GLogger;
 import net.prominic.util.FileUtils;
 
 public class EventActivate extends Event {
