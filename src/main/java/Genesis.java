@@ -438,14 +438,6 @@ public class Genesis extends JavaServerAddinGenesis {
 		logMessage("   MyAccountDominoPerformanceLogging    set performance logging");		
 	}
 	
-	public void restartAll(boolean includeThisAddin) {
-		try {
-			m_session.sendConsoleCommand("", "tell runjava quit");
-		} catch (NotesException e) {
-			e.printStackTrace();
-		}
-	}
-
 	/*
 	 * Extend default Info
 	 */
