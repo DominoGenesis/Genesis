@@ -15,8 +15,8 @@ import net.prominic.genesis.EventRunJSON;
 import net.prominic.genesis.EventUpdate;
 import net.prominic.genesis.JSONRules;
 import net.prominic.genesis.ProgramConfig;
-import net.prominic.gja_v083.GConfig;
-import net.prominic.gja_v083.JavaServerAddinGenesis;
+import net.prominic.gja_v084.GConfig;
+import net.prominic.gja_v084.JavaServerAddinGenesis;
 import net.prominic.utils.DominoUtils;
 import net.prominic.utils.HTTP;
 
@@ -33,12 +33,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.18 (runjson, export ot file)";
+		return "0.6.18 (new core)";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2022-11-08 15:30";
+		return "2023-03-29 15:30";
 	}
 
 	@Override
@@ -436,6 +436,14 @@ public class Genesis extends JavaServerAddinGenesis {
 		logMessage("   sign <dbpath>    Sign a database");
 		logMessage("   runjson <path>   Process json config file");
 		logMessage("   MyAccountDominoPerformanceLogging    set performance logging");		
+	}
+	
+	public void restartAll(boolean includeThisAddin) {
+		try {
+			m_session.sendConsoleCommand("", "tell runjava quit");
+		} catch (NotesException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/*

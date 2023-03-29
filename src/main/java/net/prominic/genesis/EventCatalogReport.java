@@ -3,9 +3,9 @@ package net.prominic.genesis;
 import java.io.File;
 import java.io.IOException;
 
-import net.prominic.gja_v083.Event;
-import net.prominic.gja_v083.GConfig;
-import net.prominic.gja_v083.GLogger;
+import net.prominic.gja_v084.Event;
+import net.prominic.gja_v084.GConfig;
+import net.prominic.gja_v084.GLogger;
 import net.prominic.utils.HTTP;
 
 public class EventCatalogReport extends Event {
