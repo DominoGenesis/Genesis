@@ -23,8 +23,8 @@ jobs:
       run: echo ${{ env.version }}
     - name: 3. Get version of GJA
       run: |
-          gja_version=$(mvn help:evaluate -Dexpression=//dependencies/dependency[artifactId='gja']/version/text() -q -DforceStdout)
-          echo "GJA_VERSION=${GJA_VERSION}" >> $GITHUB_ENV
+        gja_version=$(xmllint --xpath "string(//dependencies/dependency[artifactId='gja']/version/text())" pom.xml)
+        echo "GJA version is $gja_version"
     - name: 3.a. Display Environment Variable
       run: echo ${{ env.gja_version }}
     - name: 4. Download Notes.jar and add it to local maven repository
