@@ -5,7 +5,6 @@
 	<packaging>jar</packaging>
 	<version>0.6.18</version>
 	<name>Genesis</name>
-	<url>http://maven.apache.org</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -25,12 +24,6 @@
 						<goals>
 							<goal>shade</goal>
 						</goals>
-						<configuration>
-							<artifactSet>
-								<excludes>
-								</excludes>
-							</artifactSet>
-						</configuration>
 					</execution>
 				</executions>
 			</plugin>
