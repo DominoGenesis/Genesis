@@ -16,11 +16,16 @@ jobs:
       with:
         java-version: '8'
         distribution: 'adopt'
-    - name: 2. Download Notes.jar and add it to local maven repository
+    - name: 2. Download Notes.jar & GJA (JavaServerAddinGenesis) and add it to local maven repository
       run: |
         wget 'https://domino-1.dmytro.cloud/Files.nsf/all/file/$FILE/Notes.jar' -O Notes.jar -q --show-progress
         echo "adding Notes.jar to local maven storage"
         mvn install:install-file -Dfile="Notes.jar" -DgroupId=lotus.notes -DartifactId=notes -Dversion=10.0 -Dpackaging=jar 
+        
+        wget 'https://github.com/DominoGenesis/JavaServerAddinGenesis/releases/download/v0.8.4/gja-0.8.4.jar' -O gja-0.8.4.jar -q --show-progress
+        echo "adding gja-0.8.4.jar to local maven storage"
+        mvn install:install-file -Dfile="gja-0.8.4.jar" -DgroupId=net.prominic -DartifactId=gja -Dpackaging=jar -Dversion=0.8.4
+        
     - name: 3. Build with Maven
       run: mvn package
     - name: 4. Set version
