@@ -19,6 +19,8 @@ jobs:
         
     - name: 2. Get version of Genesis
       run: echo "version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+    - name: 2.a. Display Environment Variable
+      run: echo ${{ env.version }}
     - name: 3. Get version of GJA
       run: |
           gja_version=$(grep -A 2 "<artifactId>gja</artifactId>" pom.xml | grep "<version>" | cut -d'>' -f2 | cut -d'<' -f1)
@@ -34,7 +36,7 @@ jobs:
       run: |
         wget 'https://github.com/DominoGenesis/JavaServerAddinGenesis/releases/download/v${{ env.gja_version }}/gja-${{ env.gja_version }}.jar' -O gja-${{ env.gja_version }}.jar -q --show-progress
         echo "adding gja-${{ env.gja_version }}.jar to local maven storage"
-        mvn install:install-file -Dfile="gja-${{ env.gja_version }}.jar" -DgroupId=net.prominic -DartifactId=gja -Dpackaging=jar -Dversion=${{ env.gja_version }}        
+        mvn install:install-file -Dfile="gja-${{ env.gja_version }}.jar" -DgroupId=net.prominic -DartifactId=gja -Dpackaging=jar -Dversion=${{ env.gja_version }}
     - name: 6. Build with Maven
       run: mvn package
     - name: 7. Create release
