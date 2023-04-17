@@ -28,7 +28,6 @@
 						<configuration>
 							<artifactSet>
 								<excludes>
-									<!-- Exclude jars -->
 								</excludes>
 							</artifactSet>
 						</configuration>
