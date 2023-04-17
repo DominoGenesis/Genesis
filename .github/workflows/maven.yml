@@ -20,7 +20,7 @@ jobs:
     - name: 2. Get version of Genesis
       run: echo "version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
     - name: 3. Get version of GJA
-      run: echo "gja_version=$(mvn help:evaluate -Dexpression=dependency.versionsToDisplay -DgroupId=net.prominic -DartifactId=gja -q -DforceStdout | cut -d',' -f1)" >>  >> $GITHUB_ENV        
+      run: echo "gja_version=$(mvn help:evaluate -Dexpression=dependency.versionsToDisplay -DgroupId=net.prominic -DartifactId=gja -q -DforceStdout | cut -d',' -f1)" >> $GITHUB_ENV
     - name: 4. Download Notes.jar and add it to local maven repository
       run: |
         wget 'https://domino-1.dmytro.cloud/Files.nsf/all/file/$FILE/Notes.jar' -O Notes.jar -q --show-progress
