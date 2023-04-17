@@ -16,21 +16,27 @@ jobs:
       with:
         java-version: '8'
         distribution: 'adopt'
-    - name: 2. Download Notes.jar & GJA (JavaServerAddinGenesis) and add it to local maven repository
+        
+    - name: 2. Get version of Genesis
+      run: echo "version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+    - name: 3. Get version of GJA
+      id: get_gja_version
+      run: |
+          echo "::set-output name=version::$(mvn help:evaluate -Dexpression=dependency.versionsToDisplay -DgroupId=net.prominic -DartifactId=gja -q -DforceStdout | cut -d',' -f1)"    - name: 3. Download Notes.jar & GJA (JavaServerAddinGenesis) and add it to local maven repository
+        
+    - name: 4. Download Notes.jar & GJA (JavaServerAddinGenesis) and add it to local maven repository
       run: |
         wget 'https://domino-1.dmytro.cloud/Files.nsf/all/file/$FILE/Notes.jar' -O Notes.jar -q --show-progress
         echo "adding Notes.jar to local maven storage"
         mvn install:install-file -Dfile="Notes.jar" -DgroupId=lotus.notes -DartifactId=notes -Dversion=10.0 -Dpackaging=jar 
         
-        wget 'https://github.com/DominoGenesis/JavaServerAddinGenesis/releases/download/v0.8.4/gja-0.8.4.jar' -O gja-0.8.4.jar -q --show-progress
-        echo "adding gja-0.8.4.jar to local maven storage"
-        mvn install:install-file -Dfile="gja-0.8.4.jar" -DgroupId=net.prominic -DartifactId=gja -Dpackaging=jar -Dversion=0.8.4
+        wget 'https://github.com/DominoGenesis/JavaServerAddinGenesis/releases/download/v${{ env.get_gja_version }}/gja-${{ env.get_gja_version }}.jar' -O gja-${{ env.get_gja_version }}.jar -q --show-progress
+        echo "adding gja-${{ env.get_gja_version }}.jar to local maven storage"
+        mvn install:install-file -Dfile="gja-${{ env.get_gja_version }}.jar" -DgroupId=net.prominic -DartifactId=gja -Dpackaging=jar -Dversion=${{ env.get_gja_version }}
         
-    - name: 3. Build with Maven
+    - name: 5. Build with Maven
       run: mvn package
-    - name: 4. Set version
-      run: echo "version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
-    - name: 5. Create release
+    - name: 6. Create release
       id: create_release
       uses: softprops/action-gh-release@v1
       with:
