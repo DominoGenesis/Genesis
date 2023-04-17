@@ -38,7 +38,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2023-04-017 15:30";
+		return "2023-04-17 18:30";
 	}
 
 	@Override
