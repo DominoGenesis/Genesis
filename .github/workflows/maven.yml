@@ -16,36 +16,31 @@ jobs:
       with:
         java-version: '8'
         distribution: 'adopt'
-    - name: 2. Download Notes.jar & GJA (JavaServerAddinGenesis) and add it to local maven repository
+        
+    - name: 2. Get version of Genesis
+      run: echo "version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+    - name: 3. Get version of GJA
+      run: echo "gja_version=$(grep -A 2 '<artifactId>gja</artifactId>' pom.xml | grep version | cut -d'>' -f2 | cut -d'<' -f1)" >> $GITHUB_ENV
+    - name: 4. Download Notes.jar and add it to local maven repository
       run: |
         wget 'https://domino-1.dmytro.cloud/Files.nsf/all/file/$FILE/Notes.jar' -O Notes.jar -q --show-progress
         echo "adding Notes.jar to local maven storage"
         mvn install:install-file -Dfile="Notes.jar" -DgroupId=lotus.notes -DartifactId=notes -Dversion=10.0 -Dpackaging=jar 
-        
-        wget 'https://github.com/DominoGenesis/JavaServerAddinGenesis/releases/download/v0.8.4/gja-0.8.4.jar' -O gja-0.8.4.jar -q --show-progress
-        echo "adding gja-0.8.4.jar to local maven storage"
-        mvn install:install-file -Dfile="gja-0.8.4.jar" -DgroupId=net.prominic -DartifactId=gja -Dpackaging=jar -Dversion=0.8.4
-        
-    - name: 3. Build with Maven
+    - name: 5. Download GJA-${{ env.gja_version }}.jar and add it to local maven repository
+      run: |
+        wget 'https://github.com/DominoGenesis/JavaServerAddinGenesis/releases/download/v${{ env.gja_version }}/gja-${{ env.gja_version }}.jar' -O gja-${{ env.gja_version }}.jar -q --show-progress
+        echo "adding gja-${{ env.gja_version }}.jar to local maven storage"
+        mvn install:install-file -Dfile="gja-${{ env.gja_version }}.jar" -DgroupId=net.prominic -DartifactId=gja -Dpackaging=jar -Dversion=${{ env.gja_version }}
+    - name: 6. Build with Maven
       run: mvn package
-    - name: 4. Set version
-      run: echo "version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
-    - name: 5. Create release
+    - name: 7. Create release
       id: create_release
-      uses: actions/create-release@v1.0.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
+        name: Release v${{ env.version }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: v${{ env.version }}
-        release_name: Release v${{ env.version }}
+        files: |
+          target/Genesis-${{ env.version }}.jar
         draft: false
         prerelease: false
-    - name: Upload release asset
-      uses: actions/upload-release-asset@v1.0.2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: target/Genesis-${{ env.version }}.jar
-        asset_name: Genesis-${{ env.version }}.jar
-        asset_content_type: application/java-archive
