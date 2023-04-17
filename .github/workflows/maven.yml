@@ -22,7 +22,7 @@ jobs:
     - name: 3. Get version of GJA
       id: get_gja_version
       run: |
-          echo "::set-output name=version::$(mvn help:evaluate -Dexpression=dependency.versionsToDisplay -DgroupId=net.prominic -DartifactId=gja -q -DforceStdout | cut -d',' -f1)"    - name: 3. Download Notes.jar & GJA (JavaServerAddinGenesis) and add it to local maven repository
+          echo "::set-output name=version::$(mvn help:evaluate -Dexpression=dependency.versionsToDisplay -DgroupId=net.prominic -DartifactId=gja -q -DforceStdout | cut -d',' -f1)"
         
     - name: 4. Download Notes.jar & GJA (JavaServerAddinGenesis) and add it to local maven repository
       run: |
