@@ -32,20 +32,12 @@ jobs:
       run: echo "version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
     - name: 5. Create release
       id: create_release
-      uses: actions/create-release@v1.0.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
+        name: Release v${{ env.version }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: v${{ env.version }}
-        release_name: Release v${{ env.version }}
+        files: |
+          target/Genesis-${{ env.version }}.jar
         draft: false
         prerelease: false
-    - name: Upload release asset
-      uses: actions/upload-release-asset@v1.0.2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: target/Genesis-${{ env.version }}.jar
-        asset_name: Genesis-${{ env.version }}.jar
-        asset_content_type: application/java-archive
