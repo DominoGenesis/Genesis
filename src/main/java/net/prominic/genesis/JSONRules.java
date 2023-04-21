@@ -163,7 +163,7 @@ public class JSONRules {
 			int part2 = Integer.parseInt(genesisArr[i]);
 
 			if (part1 < part2) {
-				log(jsonArr[i] + " < " + genesisArr[i]);
+				log("JSON package is outdated: " + versionjson + " < " + this.JSON_VERSION);
 				i = 3;
 			}
 			else if(part1 > part2) {
