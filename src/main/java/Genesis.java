@@ -135,6 +135,10 @@ public class Genesis extends JavaServerAddinGenesis {
 	}
 	
 	private boolean executeCmd(String host, String secret, String cmd) {
+		if (secret.equals("-")) {
+			secret = "";
+		}
+
 		if ("check".equals(cmd)) {
 			if (check(host, secret)) {
 				logMessage("OK to connect with with: " + host);
@@ -176,9 +180,6 @@ public class Genesis extends JavaServerAddinGenesis {
 		// get addin name and it's JSON
 		String host = parts[1];
 		String secret = parts[2];
-		if (secret.equals("-")) {
-			secret = "";
-		}
 		
 		// install app by id
 		String buf = " " + secret + " "; 
