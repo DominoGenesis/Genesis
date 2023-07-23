@@ -3,6 +3,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,12 +34,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.18 (new core)";
+		return "0.6.19 (origin)";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2023-04-17 18:30";
+		return "2023-07-23 19:00";
 	}
 
 	@Override
@@ -56,7 +57,7 @@ public class Genesis extends JavaServerAddinGenesis {
 		}
 
 		// check if connection could be established
-		if (!check()) {
+		if (!check(m_catalog, "")) {
 			logWarning("connection (*FAILED*) with: " + m_catalog);
 		}
 
@@ -91,7 +92,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			eventUpdate.ConfigFilePath = this.m_javaAddinConfig; 
 			eventUpdate.CommandFilePath = this.m_javaAddinCommand;
 			this.eventsAdd(eventUpdate);
-			
+
 			EventRunJSON eventRunJSON = new EventRunJSON("RunJSON", 1, true, m_logger);
 			eventRunJSON.session = m_session;
 			eventRunJSON.Catalog = m_catalog;
@@ -106,14 +107,17 @@ public class Genesis extends JavaServerAddinGenesis {
 
 		return true;
 	}
-	
+
 	/*
 	 * test connection with Domino App Catalog (dac.nsf)
 	 */
-	private boolean check() {
+	private boolean check(String host, String secret) {
 		StringBuilder buf = new StringBuilder();
 		try {
-			String url = m_catalog.concat("/check?openagent");
+			String url = host.concat("/check?openagent");
+			if (!secret.isEmpty()) {
+				url += "&secret="+secret;
+			}
 			buf = HTTP.get(url);
 		} catch (IOException e) {
 			logSevere(e);
@@ -126,24 +130,35 @@ public class Genesis extends JavaServerAddinGenesis {
 		if (flag)
 			return true;
 
+		boolean res = executeCmd(m_catalog, "", cmd);
+		return res;
+	}
+	
+	private boolean executeCmd(String host, String secret, String cmd) {
+		if (secret.equals("-")) {
+			secret = "";
+		}
+
 		if ("check".equals(cmd)) {
-			if (check()) {
-				logMessage("OK to connect with with: " + m_catalog);
+			if (check(host, secret)) {
+				logMessage("OK to connect with with: " + host);
 			} else {
-				logWarning("*FAILED* to connect with: " + m_catalog);
+				logWarning("*FAILED* to connect with: " + host);
 			}
 		} else if ("list".equals(cmd)) {
-			showList();
+			showList(host, secret);
 		} else if ("state".equals(cmd)) {
 			showState();
 		} else if ("MyAccountDominoPerformanceLogging".equals(cmd)) {
 			MyAccountDominoPerformanceLogging();
 		} else if (cmd.startsWith("sign")) {
 			sign(cmd);
+		} else if (cmd.startsWith("origin")) {
+			origin(cmd);
 		} else if (cmd.startsWith("install")) {
-			install(cmd);
+			install(host, secret, cmd);
 		} else if (cmd.startsWith("update")) {
-			update(cmd);
+			update(host, secret, cmd);
 		} else if (cmd.startsWith("runjson")) {
 			runjson(cmd);
 		} else {
@@ -152,6 +167,25 @@ public class Genesis extends JavaServerAddinGenesis {
 		}
 
 		return true;
+	}
+
+	private void origin(String cmd) {
+		// validate command
+		String[] parts = cmd.split("\\s+");
+		if (parts.length < 4) {
+			logMessage("Command is not recognized (use -h or help to get details)");
+			return;
+		}
+
+		// get addin name and it's JSON
+		String host = parts[1];
+		String secret = parts[2];
+		
+		// install app by id
+		String buf = " " + secret + " "; 
+		String newCmd = cmd.substring(cmd.indexOf(buf) + buf.length());
+		
+		executeCmd(host, secret, newCmd);
 	}
 
 	private void runjson(String cmd) {
@@ -178,12 +212,12 @@ public class Genesis extends JavaServerAddinGenesis {
 		} catch (IOException e) {
 			logMessage("JSON failed: " + e.getMessage());
 		}
-		
+
 	}
 
 	private void MyAccountDominoPerformanceLogging() {
 		logMessage("[MyAccountDominoPerformanceLogging - started]");
-		
+
 		try {
 			String server = m_session.getServerName();
 			Document serverDoc = m_ab.getView("($ServersLookup)").getDocumentByKey(server, true);	
@@ -201,7 +235,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			fieldsInteger.put("HTTP_MaxLogFileSize", 0);
 
 			boolean toSave = false;
-			
+
 			// Iterating Strings through for loop
 			for (Map.Entry<String, String> set : fieldsString.entrySet()) {
 				String itemName = set.getKey();
@@ -214,7 +248,7 @@ public class Genesis extends JavaServerAddinGenesis {
 					toSave = true;
 				}
 			}
-			
+
 			// Iterating Strings through for loop
 			for (Map.Entry<String, Integer> set : fieldsInteger.entrySet()) {
 				String itemName = set.getKey();
@@ -234,7 +268,7 @@ public class Genesis extends JavaServerAddinGenesis {
 					toSave = true;
 				}
 			}
-			
+
 			if (toSave) {
 				logMessage("> logging settings have been updated");
 				serverDoc.save();
@@ -246,7 +280,7 @@ public class Genesis extends JavaServerAddinGenesis {
 		} catch (NotesException e) {
 			e.printStackTrace();
 		}
-		
+
 		logMessage("[MyAccountDominoPerformanceLogging - completed]");
 	}
 
@@ -282,8 +316,8 @@ public class Genesis extends JavaServerAddinGenesis {
 			logMessage(String.format("%s (%s)", directories[i], version));
 		}		
 	}
-
-	private void update(String cmd) {
+	
+	private void update(String host, String secret, String cmd) {
 		try {
 			// validate command
 			String[] parts = cmd.split("\\s+");
@@ -298,7 +332,11 @@ public class Genesis extends JavaServerAddinGenesis {
 			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
 			String version = GConfig.get(configPath, "version");
 
-			String buf = HTTP.get(m_catalog + "/package.update?openagent&id=" + id + "&v=" + version).toString();
+			String url = host + "/package.update?openagent&id=" + id + "&v=" + version;
+			if (!secret.isEmpty()) {
+				url += "&secret="+secret;
+			}
+			String buf = HTTP.get(url).toString();
 			if (buf.length() < 50) {
 				logMessage("You run latest version");
 				return;
@@ -331,29 +369,34 @@ public class Genesis extends JavaServerAddinGenesis {
 				return;
 			}
 
-			logInstall(id, res, rules.getLogData().toString());
+			logInstall(m_catalog, id, res, rules.getLogData().toString());
 			m_logger.info(rules.getLogData().toString());
 
-			update(cmd);
+			update(host, secret, cmd);
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
 	}
 
-	private void install(String cmd) {
+	private void install(String host, String secret, String cmd) {
 		try {
 			// validate command
 			String[] parts = cmd.split("\\s+");
 			if (parts.length < 2) {
 				logMessage("Command is not recognized (use -h or help to get details)");
-				logMessage("Install and update command should addin as a parameter");
 				return;
 			}
 
-			// get addin name and it's JSON
+			// id
 			String id = parts[1];
-
-			String buf = HTTP.get(m_catalog + "/package?openagent&id=" + id).toString();
+			// params
+			String[] params = Arrays.copyOfRange(parts, 2, parts.length);
+			
+			String url = host + "/package?openagent&id=" + id;
+			if (!url.isEmpty()) {
+				url += "&secret="+secret;
+			}
+			String buf = HTTP.get(url).toString();
 
 			// check number of parameters
 			int counter = 0;
@@ -364,37 +407,37 @@ public class Genesis extends JavaServerAddinGenesis {
 					i = 20;
 				}
 			}
-			if (counter + 2 > parts.length) {
+			if (counter > params.length) {
 				logMessage(String.format("This installation requires %d parameters", counter));
 				return;
 			}
 
 			// inject optional parameters
 			for (int i = 0; i < counter; i++) {
-				logMessage(String.format("Param ${%d} => %s", i, parts[i + 2]));
-				buf = buf.replace(String.format("{%d}", i), parts[i + 2]);
+				logMessage(String.format("Param ${%d} => %s", i, params[i]));
+				buf = buf.replace(String.format("{%d}", i), params[i]);
 			}
 
 			String configPath = JAVA_ADDIN_ROOT + File.separator + id + File.separator + CONFIG_FILE_NAME;
-			JSONRules rules = new JSONRules(m_session, this.m_catalog, configPath, this.m_javaAddinCommand, m_logger);
+			JSONRules rules = new JSONRules(m_session, host, configPath, this.m_javaAddinCommand, m_logger);
 			boolean res = rules.execute(buf);
 
-			logInstall(id, res, rules.getLogData().toString());
+			logInstall(host, id, res, rules.getLogData().toString());
 			m_logger.info(rules.getLogData().toString());
 
 		} catch (IOException e) {
-			logMessage("Install command failed: " + e.getMessage());
+			logMessage("install command failed: " + e.getMessage());
 		}
 	}
 
-	public boolean logInstall(String app, boolean status, String console) {
+	public boolean logInstall(String host, String app, boolean status, String console) {
 		try {
 			String server = m_session.getServerName();
 			server = URLEncoder.encode(server, "UTF-8");
 			app = URLEncoder.encode(app, "UTF-8");
 			console = URLEncoder.encode(console, "UTF-8");
 
-			String endpoint = m_catalog + "/log?openAgent";
+			String endpoint = host + "/log?openAgent";
 			String data = String.format("&server=%s&app=%s&status=%s&console=%s", server, app, (status ? "1" : ""), console);
 			StringBuilder res = HTTP.post(endpoint, data);
 
@@ -411,9 +454,13 @@ public class Genesis extends JavaServerAddinGenesis {
 	/*
 	 * Show all available addins in Genesis Catalog
 	 */
-	private void showList() {
+	private void showList(String host, String secret) {
 		try {
-			StringBuilder list = HTTP.get(m_catalog.concat("/list?openagent"));
+			String url = host.concat("/list?openagent");
+			if (!secret.isEmpty()) {
+				url += "&secret=" + secret;
+			}
+			StringBuilder list = HTTP.get(url);
 			String[] listArr = list.toString().split("\\|");
 			logMessage("*** List of App registered in Genesis Catalog ***");
 			for (int i = 0; i < listArr.length; i++) {
@@ -428,16 +475,19 @@ public class Genesis extends JavaServerAddinGenesis {
 	 * Extend default Help
 	 */
 	protected void showHelpExt() {
+		logMessage("   help             Show help information (or -h)");
+
 		logMessage("   check            Check connection with Catalog");
 		logMessage("   list             List of available Java addin in the Catalog");
 		logMessage("   state            Show all installed addin (active and non active)");
-		logMessage("   install <name>   Install Java addin from the Catalog");
+		logMessage("   install <id>     Install Java addin from the Catalog");
 		logMessage("   update <name>    Update Java addin from the Catalog");
 		logMessage("   sign <dbpath>    Sign a database");
 		logMessage("   runjson <path>   Process json config file");
-		logMessage("   MyAccountDominoPerformanceLogging    set performance logging");		
+		logMessage("   MyAccountDominoPerformanceLogging          Set performance logging");
+		logMessage("   origin <host> <secret> <command>           Allow to use another server" );
 	}
-	
+
 	/*
 	 * Extend default Info
 	 */
