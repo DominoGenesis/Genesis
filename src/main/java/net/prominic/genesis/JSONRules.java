@@ -130,8 +130,8 @@ public class JSONRules {
 		boolean res = true;
 		try {
 			if (obj.containsKey("notesversion")) {
-				String[] requireVersion = ((String) obj.get("notesversion")).split("//.");
-				String[] sessionVersion = m_session.getNotesVersion().split("//.");
+				String[] requireVersion = ((String) obj.get("notesversion")).split("\\.");
+				String[] sessionVersion = m_session.getNotesVersion().split("\\.");
 
 				for(int i=0; i<=2; i++) {
 					int requireSubVersion = Integer.parseInt(requireVersion[i]);

@@ -3,7 +3,7 @@
 	<groupId>net.prominic.Genesis</groupId>
 	<artifactId>Genesis</artifactId>
 	<packaging>jar</packaging>
-	<version>0.6.18</version>
+	<version>0.6.19</version>
 	<name>Genesis</name>
 
 	<properties>
