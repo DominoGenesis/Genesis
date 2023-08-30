@@ -15,6 +15,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import lotus.domino.Session;
+import lotus.domino.View;
 import lotus.domino.ACL;
 import lotus.domino.ACLEntry;
 import lotus.domino.Database;
@@ -458,9 +459,34 @@ public class JSONRules {
 
 			JSONArray documents = (JSONArray) json.get("documents");
 			parseDocuments(database, documents);
+
+			JSONArray views = (JSONArray) json.get("views");
+			parseViews(database, views);
 		} catch (NotesException e) {
 			log(e);
 		}
+	}
+
+	private void parseViews(Database database, JSONArray array) {
+		try {
+			if (array == null) return;
+
+			for(int i=0; i<array.size(); i++) {
+				JSONObject obj = (JSONObject) array.get(i);
+
+				String name = (String) obj.get("name");
+				View view = database.getView(name);
+				if (view != null) {
+					boolean refresh = obj.containsKey("refresh") && (Boolean) obj.get("refresh");
+					if (refresh) {
+						view.refresh();
+					}
+				}
+			}
+		} catch (NotesException e) {
+			log(e);
+		}
+
 	}
 
 	private void parseACL(Database database, JSONObject json) {
@@ -749,17 +775,17 @@ public class JSONRules {
 			DocumentCollection col = database.search(formula, null, max.intValue());
 			log(String.format("> %s found: %d", formula, col.getCount()));
 			if (col.getCount() == 0) return;
-			
+
 			StringBuilder sb = new StringBuilder();
-			
+
 			Document doc = col.getFirstDocument();
 			while (doc != null) {
 				Vector<?> content = m_session.evaluate(evaluate, doc);
-				
+
 				sb.append(content.get(0));
 				doc = col.getNextDocument();
 			}
-			
+
 			FileUtils.writeFile(new File(filePath), sb.toString());
 		} catch (NotesException e) {
 			log(e);
