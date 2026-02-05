@@ -16,13 +16,14 @@ import net.prominic.genesis.EventRunJSON;
 import net.prominic.genesis.EventUpdate;
 import net.prominic.genesis.JSONRules;
 import net.prominic.genesis.ProgramConfig;
-import net.prominic.gja_v084.GConfig;
-import net.prominic.gja_v084.JavaServerAddinGenesis;
-import net.prominic.utils.DominoUtils;
+import net.prominic.gja_v085.GConfig;
+import net.prominic.gja_v085.JavaServerAddinGenesis;
+import net.prominic.utils.GenesisUtils;
 import net.prominic.utils.HTTP;
 
 public class Genesis extends JavaServerAddinGenesis {
 	private String m_catalog = "";
+	private Database m_ab = null;
 
 	public Genesis(String[] args) {
 		super(args);
@@ -34,12 +35,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.20 (origin)";
+		return "0.6.20 (Claude Review)";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2023-08-30 16:00";
+		return "2025-02-05";
 	}
 
 	@Override
@@ -59,6 +60,18 @@ public class Genesis extends JavaServerAddinGenesis {
 		// check if connection could be established
 		if (!check(m_catalog, "")) {
 			logWarning("connection (*FAILED*) with: " + m_catalog);
+		}
+
+		// Open Address Book (names.nsf) for program documents
+		try {
+			m_ab = m_session.getDatabase(null, "names.nsf");
+			if (m_ab == null || !m_ab.isOpen()) {
+				logSevere("Failed to open names.nsf - unloading Genesis");
+				return false;
+			}
+		} catch (NotesException e) {
+			logSevere("Failed to open names.nsf: " + e.getMessage() + " - unloading Genesis");
+			return false;
 		}
 
 		// Update program documents
@@ -169,6 +182,26 @@ public class Genesis extends JavaServerAddinGenesis {
 		return true;
 	}
 
+	private static final String[] ALLOWED_HOSTS = {
+		"appstore.dominogenesis.com",
+		"domino-1.dmytro.cloud"
+	};
+
+	private boolean isHostAllowed(String host) {
+		try {
+			java.net.URL url = new java.net.URL(host);
+			String hostname = url.getHost().toLowerCase();
+			for (String allowed : ALLOWED_HOSTS) {
+				if (hostname.equals(allowed) || hostname.endsWith("." + allowed)) {
+					return true;
+				}
+			}
+		} catch (java.net.MalformedURLException e) {
+			return false;
+		}
+		return false;
+	}
+
 	private void origin(String cmd) {
 		// validate command
 		String[] parts = cmd.split("\\s+");
@@ -180,47 +213,77 @@ public class Genesis extends JavaServerAddinGenesis {
 		// get addin name and it's JSON
 		String host = parts[1];
 		String secret = parts[2];
-		
+
+		// validate host against whitelist to prevent SSRF
+		if (!isHostAllowed(host)) {
+			logMessage("Host not allowed: " + host);
+			logMessage("Allowed hosts: " + Arrays.toString(ALLOWED_HOSTS));
+			return;
+		}
+
 		// install app by id
-		String buf = " " + secret + " "; 
+		String buf = " " + secret + " ";
 		String newCmd = cmd.substring(cmd.indexOf(buf) + buf.length());
-		
+
 		executeCmd(host, secret, newCmd);
 	}
 
 	private void runjson(String cmd) {
-		try {
-			// validate command
-			String[] parts = cmd.split("\\s+");
-			if (parts.length < 2) {
-				logMessage("Command is not recognized (use -h or help to get details)");
-				logMessage("runjson command should have <filepath> as a parameter");
-				return;
-			}
+		// validate command
+		String[] parts = cmd.split("\\s+");
+		if (parts.length < 2) {
+			logMessage("Command is not recognized (use -h or help to get details)");
+			logMessage("runjson command should have <filepath> as a parameter");
+			return;
+		}
 
-			// get filepath to json
-			String filepath = parts[1];
-			FileReader fr = new FileReader(filepath);
+		// get filepath to json
+		String filepath = parts[1];
+		FileReader fr = null;
+		try {
+			fr = new FileReader(filepath);
 
 			String configPath = JAVA_ADDIN_ROOT + File.separator + "Genesis" + File.separator + CONFIG_FILE_NAME;
 			JSONRules rules = new JSONRules(m_session, this.m_catalog, configPath, this.m_javaAddinCommand, m_logger);
 			boolean res = rules.execute(fr);
 			if (!res) {
 				logMessage("The json file can't be executed");
-				return;
 			}
 		} catch (IOException e) {
 			logMessage("JSON failed: " + e.getMessage());
+		} finally {
+			if (fr != null) {
+				try {
+					fr.close();
+				} catch (IOException e) {
+					// ignore
+				}
+			}
 		}
-
 	}
 
 	private void MyAccountDominoPerformanceLogging() {
 		logMessage("[MyAccountDominoPerformanceLogging - started]");
 
+		if (m_ab == null) {
+			logMessage("[MyAccountDominoPerformanceLogging - skipped: names.nsf not available]");
+			return;
+		}
+
+		lotus.domino.View view = null;
+		Document serverDoc = null;
 		try {
 			String server = m_session.getServerName();
-			Document serverDoc = m_ab.getView("($ServersLookup)").getDocumentByKey(server, true);	
+			view = m_ab.getView("($ServersLookup)");
+			if (view == null) {
+				logMessage("[MyAccountDominoPerformanceLogging - skipped: ($ServersLookup) view not found]");
+				return;
+			}
+			serverDoc = view.getDocumentByKey(server, true);
+			if (serverDoc == null) {
+				logMessage("[MyAccountDominoPerformanceLogging - skipped: server document not found]");
+				return;
+			}
 
 			HashMap<String, String> fieldsString = new HashMap<String, String>();
 			fieldsString.put("HTTP_LogToFiles", "1");
@@ -249,7 +312,7 @@ public class Genesis extends JavaServerAddinGenesis {
 				}
 			}
 
-			// Iterating Strings through for loop
+			// Iterating Integers through for loop
 			for (Map.Entry<String, Integer> set : fieldsInteger.entrySet()) {
 				String itemName = set.getKey();
 
@@ -279,6 +342,8 @@ public class Genesis extends JavaServerAddinGenesis {
 
 		} catch (NotesException e) {
 			e.printStackTrace();
+		} finally {
+			net.prominic.gja_v085.utils.DominoUtils.recycle(serverDoc, view);
 		}
 
 		logMessage("[MyAccountDominoPerformanceLogging - completed]");
@@ -301,7 +366,7 @@ public class Genesis extends JavaServerAddinGenesis {
 				return;
 			}
 
-			DominoUtils.sign(database);
+			GenesisUtils.sign(database);
 		} catch (NotesException e) {
 			e.printStackTrace();
 		}
@@ -317,7 +382,18 @@ public class Genesis extends JavaServerAddinGenesis {
 		}		
 	}
 	
+	private static final int MAX_UPDATE_DEPTH = 10;
+
 	private void update(String host, String secret, String cmd) {
+		update(host, secret, cmd, 0);
+	}
+
+	private void update(String host, String secret, String cmd, int depth) {
+		if (depth >= MAX_UPDATE_DEPTH) {
+			logMessage("Maximum update depth reached (" + MAX_UPDATE_DEPTH + "). Stopping update chain.");
+			return;
+		}
+
 		try {
 			// validate command
 			String[] parts = cmd.split("\\s+");
@@ -372,7 +448,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			logInstall(m_catalog, id, res, rules.getLogData().toString());
 			m_logger.info(rules.getLogData().toString());
 
-			update(host, secret, cmd);
+			update(host, secret, cmd, depth + 1);
 		} catch (IOException e) {
 			logMessage("Install command failed: " + e.getMessage());
 		}
@@ -496,8 +572,12 @@ public class Genesis extends JavaServerAddinGenesis {
 	}
 
 	protected void termBeforeAB() {
-		ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args, m_logger);
-		pc.setState(m_ab, ProgramConfig.UNLOAD);		// set program documents in UNLOAD state
+		if (m_ab != null) {
+			ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args, m_logger);
+			pc.setState(m_ab, ProgramConfig.UNLOAD);		// set program documents in UNLOAD state
+			net.prominic.gja_v085.utils.DominoUtils.recycle(m_ab);
+			m_ab = null;
+		}
 	}
 
 }

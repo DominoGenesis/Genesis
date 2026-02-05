@@ -7,8 +7,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 
 import lotus.domino.Session;
-import net.prominic.gja_v084.Event;
-import net.prominic.gja_v084.GLogger;
+import net.prominic.gja_v085.Event;
+import net.prominic.gja_v085.GLogger;
 
 public class EventRunJSON extends Event {
 	public Session session = null;
@@ -29,7 +29,7 @@ public class EventRunJSON extends Event {
 			if (!folder.exists()) return;
 
 			File[] files = folder.listFiles();
-			if (files.length == 0) return;
+			if (files == null || files.length == 0) return;
 
 			File folder2 = new File(JavaAddinJSONResponse);
 			if (!folder2.exists()) {

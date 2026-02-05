@@ -1,13 +1,13 @@
 package net.prominic.genesis;
 
 import lotus.domino.Database;
-
 import lotus.domino.DateTime;
 import lotus.domino.Document;
 import lotus.domino.DocumentCollection;
 import lotus.domino.NotesException;
 import lotus.domino.View;
-import net.prominic.gja_v084.GLogger;
+import net.prominic.gja_v085.GLogger;
+import net.prominic.gja_v085.utils.DominoUtils;
 
 public class ProgramConfig {
 	private final static String COMMENT_PROMINIC = "[PROMINIC.NET] (created automatically). Please do not delete it.\nPlease contact Support@Prominic.NET with any questions about this program document.";
@@ -74,25 +74,22 @@ public class ProgramConfig {
 					}
 				}
 
-				if (doc != null) {
-					doc.recycle();
-				}
+				DominoUtils.recycle(doc);
 
 				doc = nextDoc;
 			}
 
 			if (!programStartupOnly) {
 				doc = createProgram(database, PROGRAM_SERVERSTART);
-				doc.recycle();
+				DominoUtils.recycle(doc);
 			}
 
 			if (!programScheduled) {
 				doc = createProgram(database, newEnabled);
-				doc.recycle();
+				DominoUtils.recycle(doc);
 			}
 
-			col.recycle();
-			view.recycle();
+			DominoUtils.recycle(col, view);
 
 			return true;
 		} catch(Exception e) {
@@ -121,12 +118,11 @@ public class ProgramConfig {
 					log("program document disabled");	
 				}
 
-				doc.recycle();
+				DominoUtils.recycle(doc);
 				doc = nextDoc;
 			}
 
-			col.recycle();
-			view.recycle();
+			DominoUtils.recycle(col, view);
 
 			return true;
 		} catch(Exception e) {
@@ -135,7 +131,7 @@ public class ProgramConfig {
 
 		return false;
 	}
-	
+
 	private void deleteDuplicate(Document doc) throws NotesException {
 		doc.remove(true);
 		log("program document deleted (duplicate)");
@@ -161,7 +157,10 @@ public class ProgramConfig {
 
 		if (newEnabled.equals(PROGRAM_ENABLE)) {
 			setSchedule(database, doc, newEnabled);
-			log("program document updated. Schedule to run at: " + doc.getFirstItem("Schedule").getDateTimeValue().getLocalTime());
+			lotus.domino.Item item = doc.getFirstItem("Schedule");
+			DateTime scheduleTime = item.getDateTimeValue();
+			log("program document updated. Schedule to run at: " + scheduleTime.getLocalTime());
+			DominoUtils.recycle(scheduleTime, item);
 			toSave = true;
 		}
 
@@ -180,7 +179,7 @@ public class ProgramConfig {
 		dt.setNow();
 		dt.adjustMinute(PROGRAM_MINUTES_DEFAULT);
 		doc.replaceItemValue("Schedule", dt);
-		dt.recycle();
+		DominoUtils.recycle(dt);
 	}
 
 	/*

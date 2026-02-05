@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
-import net.prominic.gja_v084.Event;
-import net.prominic.gja_v084.GConfig;
-import net.prominic.gja_v084.GLogger;
-import net.prominic.util.FileUtils;
+import net.prominic.gja_v085.Event;
+import net.prominic.gja_v085.GConfig;
+import net.prominic.gja_v085.GLogger;
+import net.prominic.gja_v085.utils.FileUtils;
 
 public class EventActivate extends Event {
 	public String JavaAddinRoot = null;
@@ -23,30 +23,107 @@ public class EventActivate extends Event {
 	public void run() {
 		try {
 			File file = new File(JavaAddinRoot);
-			if (!file.exists()) return;
+			log("[EventActivate] Checking JavaAddinRoot: " + JavaAddinRoot);
+
+			if (!file.exists()) {
+				logWarning("[EventActivate] JavaAddinRoot does not exist: " + JavaAddinRoot);
+				return;
+			}
+
 			String osName = System.getProperty("os.name").toLowerCase();
 			boolean inWindows = osName.contains("win");
+			log("[EventActivate] OS detected: " + osName + ", isWindows: " + inWindows);
 
 			File[] directories = file.listFiles();
+			if (directories == null) {
+				logWarning("[EventActivate] Unable to list directories in: " + JavaAddinRoot);
+				return;
+			}
+
+			log("[EventActivate] Found " + directories.length + " entries in JavaAddinRoot");
+
 			for(int i=0; i<directories.length; i++) {
 				if (directories[i].isDirectory()) {
 					String addinName = directories[i].getName();
 					String addinConfigPath = JavaAddinRoot + File.separator + addinName + File.separator + JavaAddinConfig;
 					String addinLivePath = JavaAddinRoot + File.separator + addinName + File.separator + JavaAddinLive;
+
+					log("[EventActivate] Checking addin: " + addinName);
+					log("[EventActivate]   Config path: " + addinConfigPath);
+					log("[EventActivate]   Live path: " + addinLivePath);
+
+					File configFile = new File(addinConfigPath);
+					if (!configFile.exists()) {
+						log("[EventActivate]   Config file does not exist, skipping");
+						continue;
+					}
+
 					String addinActive = GConfig.get(addinConfigPath, "active");
 					String runjava = GConfig.get(addinConfigPath, "runjava");
-					if ("1".equals(addinActive) && !isLive(addinLivePath)) {
+
+					log("[EventActivate]   active=" + addinActive + ", runjava=" + runjava);
+
+					boolean isCurrentlyLive = isLive(addinLivePath);
+					log("[EventActivate]   isLive=" + isCurrentlyLive);
+
+					if ("1".equals(addinActive) && !isCurrentlyLive) {
 						String runjavaTask = inWindows ? "nrunjava" : "runjava";
 						String cmd = String.format("%s %s", runjavaTask, runjava);
-						@SuppressWarnings("unused")
-						Process proc = Runtime.getRuntime().exec(cmd);
+
+						log("[EventActivate]   Attempting to start addin: " + addinName);
+						log("[EventActivate]   Command: " + cmd);
+
+						try {
+							Process proc = Runtime.getRuntime().exec(cmd);
+							log("[EventActivate]   Process started successfully for: " + addinName);
+
+							// Give the process a moment and check if it's still alive
+							Thread.sleep(1000);
+							boolean isAlive = proc.isAlive();
+							log("[EventActivate]   Process isAlive after 1s: " + isAlive);
+
+							if (!isAlive) {
+								int exitCode = proc.exitValue();
+								logWarning("[EventActivate]   Process exited immediately with code: " + exitCode);
+							}
+						} catch (IOException e) {
+							logSevere("[EventActivate]   Failed to execute command: " + cmd);
+							logSevere("[EventActivate]   Error: " + e.getMessage());
+							this.getLogger().severe(e);
+						} catch (InterruptedException e) {
+							logWarning("[EventActivate]   Thread interrupted while checking process");
+						}
+					} else {
+						if (!"1".equals(addinActive)) {
+							log("[EventActivate]   Addin is not active, skipping");
+						} else {
+							log("[EventActivate]   Addin is already live, skipping");
+						}
 					}
 				}
 			}
-		} catch (IOException e) {
+			log("[EventActivate] Completed checking all addins");
+		} catch (Exception e) {
+			logSevere("[EventActivate] Unexpected error: " + e.getMessage());
+			this.getLogger().severe(e);
 			e.printStackTrace();
-		}					
+		}
 
+	}
+
+	private void log(String message) {
+		this.getLogger().info(message);
+		System.out.println(message);
+	}
+
+	private void logWarning(String message) {
+		this.getLogger().warning(message);
+		System.out.println(message);
+	}
+
+	private void logSevere(String message) {
+		this.getLogger().severe(message);
+		System.out.println(message);
 	}
 
 	private boolean isLive(String javaAddinPath) {
