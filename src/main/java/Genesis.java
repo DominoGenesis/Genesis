@@ -35,12 +35,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.20 (Claude Review)";
+		return "0.6.20 (Load RunJava)";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2025-02-05";
+		return "2025-02-06";
 	}
 
 	@Override
@@ -95,6 +95,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			this.eventsAdd(eventCatalogReport);
 
 			EventActivate eventActivate = new EventActivate("Activate", 14400, true, m_logger);
+			eventActivate.session = m_session;
 			eventActivate.JavaAddinRoot = JAVA_ADDIN_ROOT;
 			eventActivate.JavaAddinConfig = CONFIG_FILE_NAME;
 			eventActivate.JavaAddinLive = LIVE_FILE_NAME;

@@ -1,16 +1,18 @@
 package net.prominic.genesis;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
+import lotus.domino.NotesException;
+import lotus.domino.Session;
 import net.prominic.gja_v085.Event;
 import net.prominic.gja_v085.GConfig;
 import net.prominic.gja_v085.GLogger;
 import net.prominic.gja_v085.utils.FileUtils;
 
 public class EventActivate extends Event {
+	public Session session = null;
 	public String JavaAddinRoot = null;
 	public String JavaAddinConfig = null;
 	public String JavaAddinLive = null;
@@ -29,10 +31,6 @@ public class EventActivate extends Event {
 				logWarning("[EventActivate] JavaAddinRoot does not exist: " + JavaAddinRoot);
 				return;
 			}
-
-			String osName = System.getProperty("os.name").toLowerCase();
-			boolean inWindows = osName.contains("win");
-			log("[EventActivate] OS detected: " + osName + ", isWindows: " + inWindows);
 
 			File[] directories = file.listFiles();
 			if (directories == null) {
@@ -67,31 +65,25 @@ public class EventActivate extends Event {
 					log("[EventActivate]   isLive=" + isCurrentlyLive);
 
 					if ("1".equals(addinActive) && !isCurrentlyLive) {
-						String runjavaTask = inWindows ? "nrunjava" : "runjava";
-						String cmd = String.format("%s %s", runjavaTask, runjava);
+						String cmd = String.format("load runjava %s", runjava);
 
 						log("[EventActivate]   Attempting to start addin: " + addinName);
-						log("[EventActivate]   Command: " + cmd);
+						log("[EventActivate]   Console command: " + cmd);
 
 						try {
-							Process proc = Runtime.getRuntime().exec(cmd);
-							log("[EventActivate]   Process started successfully for: " + addinName);
-
-							// Give the process a moment and check if it's still alive
-							Thread.sleep(1000);
-							boolean isAlive = proc.isAlive();
-							log("[EventActivate]   Process isAlive after 1s: " + isAlive);
-
-							if (!isAlive) {
-								int exitCode = proc.exitValue();
-								logWarning("[EventActivate]   Process exited immediately with code: " + exitCode);
+							if (session == null) {
+								logSevere("[EventActivate]   Session is null, cannot send console command");
+							} else {
+								String result = session.sendConsoleCommand("", cmd);
+								log("[EventActivate]   Console command sent for: " + addinName);
+								if (result != null && !result.isEmpty()) {
+									log("[EventActivate]   Response: " + result.trim());
+								}
 							}
-						} catch (IOException e) {
-							logSevere("[EventActivate]   Failed to execute command: " + cmd);
+						} catch (NotesException e) {
+							logSevere("[EventActivate]   Failed to send console command: " + cmd);
 							logSevere("[EventActivate]   Error: " + e.getMessage());
 							this.getLogger().severe(e);
-						} catch (InterruptedException e) {
-							logWarning("[EventActivate]   Thread interrupted while checking process");
 						}
 					} else {
 						if (!"1".equals(addinActive)) {
