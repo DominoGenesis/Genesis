@@ -81,11 +81,12 @@ public class HTTP {
 	}
 
 	public static boolean saveFile(URL download, String filePath) {
+		ReadableByteChannel rbc = null;
+		FileOutputStream fos = null;
 		try {
-			ReadableByteChannel rbc = Channels.newChannel(download.openStream());
-			FileOutputStream fos = new FileOutputStream(filePath);
+			rbc = Channels.newChannel(download.openStream());
+			fos = new FileOutputStream(filePath);
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-			fos.close();
 			return true;
 		}
 		catch (FileNotFoundException e) {
@@ -96,6 +97,22 @@ public class HTTP {
 		}
 		catch (IOException e) {
 			e.printStackTrace();
+		}
+		finally {
+			if (fos != null) {
+				try {
+					fos.close();
+				} catch (IOException e) {
+					// ignore
+				}
+			}
+			if (rbc != null) {
+				try {
+					rbc.close();
+				} catch (IOException e) {
+					// ignore
+				}
+			}
 		}
 		return false;
 	}

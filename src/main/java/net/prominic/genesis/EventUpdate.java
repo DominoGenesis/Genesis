@@ -3,10 +3,10 @@ package net.prominic.genesis;
 import java.io.File;
 import java.io.IOException;
 
-import net.prominic.gja_v084.Event;
-import net.prominic.gja_v084.GConfig;
-import net.prominic.gja_v084.GLogger;
-import net.prominic.util.FileUtils;
+import net.prominic.gja_v085.Event;
+import net.prominic.gja_v085.GConfig;
+import net.prominic.gja_v085.GLogger;
+import net.prominic.gja_v085.utils.FileUtils;
 import net.prominic.utils.HTTP;
 
 public class EventUpdate extends Event {
@@ -31,7 +31,9 @@ public class EventUpdate extends Event {
 				return;
 			}
 
-			System.out.println("New version of Genesis is detected. Update process has started");
+			String msg = "New version of Genesis is detected. Update process has started";
+			System.out.println(msg);
+			this.getLogger().info(msg);
 			FileUtils.writeFile(new File(CommandFilePath), "update Genesis");
 		} catch (IOException e) {
 			e.printStackTrace();

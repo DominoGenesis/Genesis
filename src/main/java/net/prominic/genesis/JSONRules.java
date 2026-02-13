@@ -22,10 +22,10 @@ import lotus.domino.Database;
 import lotus.domino.DocumentCollection;
 import lotus.domino.Document;
 import lotus.domino.NotesException;
-import net.prominic.gja_v084.GConfig;
-import net.prominic.gja_v084.GLogger;
-import net.prominic.util.FileUtils;
-import net.prominic.utils.DominoUtils;
+import net.prominic.gja_v085.GConfig;
+import net.prominic.gja_v085.GLogger;
+import net.prominic.gja_v085.utils.FileUtils;
+import net.prominic.utils.GenesisUtils;
 import net.prominic.utils.HTTP;
 
 public class JSONRules {
@@ -241,24 +241,22 @@ public class JSONRules {
 	private void doUpdateDesign(JSONArray list) {
 		if (list == null || list.size() == 0) return;
 
-		try {
-			for(int i=0; i<list.size(); i++) {
+		String osName = System.getProperty("os.name").toLowerCase();
+		boolean inWindows = osName.contains("win");
+
+		for(int i=0; i<list.size(); i++) {
+			try {
 				JSONObject obj = (JSONObject) list.get(i);
-				String convert = isWindows() ? "nconvert" : "convert";
+				String convert = inWindows ? "nconvert" : "convert";
 				String target = (String) obj.get("target");
 				String template = (String) obj.get("template");
 				String cmd = String.format("%s -d %s * %s", convert, target, template);
-				@SuppressWarnings("unused")
-				Process proc = Runtime.getRuntime().exec(cmd);
-			}
-		} catch (IOException e) {
-			log(e);
-		}
-	}
 
-	private boolean isWindows() {
-		String osName = System.getProperty("os.name").toLowerCase();
-		return osName.contains("win");
+				Runtime.getRuntime().exec(cmd);
+			} catch (IOException e) {
+				log(e);
+			}
+		}
 	}
 
 	private boolean doRunIf(JSONObject jsonObject) {
@@ -343,21 +341,17 @@ public class JSONRules {
 	private void saveFile(String from, String to, boolean replace) throws IOException {
 		// check if file already exists (by default skip)
 		File file = new File(to);
-		if (file.exists() && !replace) {
-			return;
-		}
+		if (file.exists() && !replace) return;
 
 		// create sub folders if needed
-		String toPath = to.substring(0, to.lastIndexOf("/"));
-		File dir = new File(toPath);
-		if (!dir.exists()) {
-			dir.mkdirs();
+		File parentDir = file.getParentFile();
+		if (parentDir != null && !parentDir.exists()) {
+			parentDir.mkdirs();
 		}
 
 		boolean res = HTTP.saveFile(new URL(from), to);
 		if (!res) {
 			log("> failed to download");
-			return;
 		}
 	}
 
@@ -450,7 +444,7 @@ public class JSONRules {
 			};
 
 			if (sign) {
-				DominoUtils.sign(database);
+				GenesisUtils.sign(database);
 			}
 
 			if (json.containsKey("ACL")) {
