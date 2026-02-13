@@ -32,11 +32,10 @@ public class EventUpdate extends Event {
 			}
 
 			String msg = "New version of Genesis is detected. Update process has started";
-			System.out.println(msg);
 			this.getLogger().info(msg);
 			FileUtils.writeFile(new File(CommandFilePath), "update Genesis");
 		} catch (IOException e) {
-			e.printStackTrace();
+			this.getLogger().severe(e);
 		}
 	}
 

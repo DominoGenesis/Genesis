@@ -25,20 +25,13 @@ public class EventActivate extends Event {
 	public void run() {
 		try {
 			File file = new File(JavaAddinRoot);
-			log("[EventActivate] Checking JavaAddinRoot: " + JavaAddinRoot);
-
 			if (!file.exists()) {
 				logWarning("[EventActivate] JavaAddinRoot does not exist: " + JavaAddinRoot);
 				return;
 			}
 
 			File[] directories = file.listFiles();
-			if (directories == null) {
-				logWarning("[EventActivate] Unable to list directories in: " + JavaAddinRoot);
-				return;
-			}
-
-			log("[EventActivate] Found " + directories.length + " entries in JavaAddinRoot");
+			if (directories == null) return;
 
 			for(int i=0; i<directories.length; i++) {
 				if (directories[i].isDirectory()) {
@@ -46,66 +39,35 @@ public class EventActivate extends Event {
 					String addinConfigPath = JavaAddinRoot + File.separator + addinName + File.separator + JavaAddinConfig;
 					String addinLivePath = JavaAddinRoot + File.separator + addinName + File.separator + JavaAddinLive;
 
-					log("[EventActivate] Checking addin: " + addinName);
-					log("[EventActivate]   Config path: " + addinConfigPath);
-					log("[EventActivate]   Live path: " + addinLivePath);
-
 					File configFile = new File(addinConfigPath);
-					if (!configFile.exists()) {
-						log("[EventActivate]   Config file does not exist, skipping");
-						continue;
-					}
+					if (!configFile.exists()) continue;
 
 					String addinActive = GConfig.get(addinConfigPath, "active");
 					String runjava = GConfig.get(addinConfigPath, "runjava");
 
-					log("[EventActivate]   active=" + addinActive + ", runjava=" + runjava);
-
-					boolean isCurrentlyLive = isLive(addinLivePath);
-					log("[EventActivate]   isLive=" + isCurrentlyLive);
-
-					if ("1".equals(addinActive) && !isCurrentlyLive) {
+					if ("1".equals(addinActive) && !isLive(addinLivePath)) {
 						String cmd = String.format("load runjava %s", runjava);
-
-						log("[EventActivate]   Attempting to start addin: " + addinName);
-						log("[EventActivate]   Console command: " + cmd);
 
 						try {
 							if (session == null) {
-								logSevere("[EventActivate]   Session is null, cannot send console command");
+								logSevere("[EventActivate] Session is null, cannot send console command");
 							} else {
 								String result = session.sendConsoleCommand("", cmd);
-								log("[EventActivate]   Console command sent for: " + addinName);
+								this.getLogger().info("[EventActivate] " + addinName + ": " + cmd);
 								if (result != null && !result.isEmpty()) {
-									log("[EventActivate]   Response: " + result.trim());
+									this.getLogger().info("[EventActivate] " + addinName + " response: " + result.trim());
 								}
 							}
 						} catch (NotesException e) {
-							logSevere("[EventActivate]   Failed to send console command: " + cmd);
-							logSevere("[EventActivate]   Error: " + e.getMessage());
-							this.getLogger().severe(e);
-						}
-					} else {
-						if (!"1".equals(addinActive)) {
-							log("[EventActivate]   Addin is not active, skipping");
-						} else {
-							log("[EventActivate]   Addin is already live, skipping");
+							logSevere("[EventActivate] Failed: " + cmd + " - " + e.getMessage());
 						}
 					}
 				}
 			}
-			log("[EventActivate] Completed checking all addins");
 		} catch (Exception e) {
-			logSevere("[EventActivate] Unexpected error: " + e.getMessage());
-			this.getLogger().severe(e);
-			e.printStackTrace();
+			logSevere("[EventActivate] Error: " + e.getMessage());
 		}
 
-	}
-
-	private void log(String message) {
-		this.getLogger().info(message);
-		System.out.println(message);
 	}
 
 	private void logWarning(String message) {
@@ -119,7 +81,7 @@ public class EventActivate extends Event {
 	}
 
 	private boolean isLive(String javaAddinPath) {
-		try { 
+		try {
 			File f = new File(javaAddinPath);
 			if (!f.exists()) return false;
 
@@ -137,8 +99,8 @@ public class EventActivate extends Event {
 			Calendar c2 = Calendar.getInstance();
 
 			return c1.after(c2);
-		} catch(Exception e){  
-			return false;  
+		} catch(Exception e){
+			return false;
 		}
 	}
 }
