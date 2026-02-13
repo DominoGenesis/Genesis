@@ -35,12 +35,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "0.6.20 (Load RunJava)";
+		return "1.0.0";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2025-02-06";
+		return "2026-02-13";
 	}
 
 	@Override
@@ -134,7 +134,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			}
 			buf = HTTP.get(url);
 		} catch (IOException e) {
-			logSevere(e);
+			e.printStackTrace();
 		}
 		return buf.toString().equals("OK");
 	}
@@ -155,7 +155,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 		if ("check".equals(cmd)) {
 			if (check(host, secret)) {
-				logMessage("OK to connect with with: " + host);
+				logMessage("OK to connect with: " + host);
 			} else {
 				logWarning("*FAILED* to connect with: " + host);
 			}
@@ -290,7 +290,6 @@ public class Genesis extends JavaServerAddinGenesis {
 			fieldsString.put("HTTP_LogToFiles", "1");
 			fieldsString.put("HTTP_LogToDomLog", "0");
 			fieldsString.put("HTTP_AccessLogFormat", "1");
-			fieldsString.put("HTTP_AccessLogFormat", "1");
 			fieldsString.put("HTTP_LogTime", "0");
 			fieldsString.put("HTTP_LogFileDuration", "0");
 
@@ -375,6 +374,10 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	private void showState() {
 		String[] directories = getAllAddin();
+		if (directories == null) {
+			logMessage("No addins found");
+			return;
+		}
 		for(int i=0; i<directories.length; i++) {
 			String configPath = JAVA_ADDIN_ROOT + File.separator + directories[i] + File.separator + CONFIG_FILE_NAME;
 			File f = new File(configPath);
@@ -470,7 +473,7 @@ public class Genesis extends JavaServerAddinGenesis {
 			String[] params = Arrays.copyOfRange(parts, 2, parts.length);
 			
 			String url = host + "/package?openagent&id=" + id;
-			if (!url.isEmpty()) {
+			if (!secret.isEmpty()) {
 				url += "&secret="+secret;
 			}
 			String buf = HTTP.get(url).toString();
@@ -572,7 +575,7 @@ public class Genesis extends JavaServerAddinGenesis {
 		logMessage("catalog      " + this.m_catalog);
 	}
 
-	protected void termBeforeAB() {
+	protected void termBeforeCleanup() {
 		if (m_ab != null) {
 			ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args, m_logger);
 			pc.setState(m_ab, ProgramConfig.UNLOAD);		// set program documents in UNLOAD state

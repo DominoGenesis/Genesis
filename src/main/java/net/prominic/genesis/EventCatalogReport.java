@@ -29,16 +29,17 @@ public class EventCatalogReport extends Event {
 
 			HTTP.post(endpoint, data);
 		} catch (IOException e) {
-			e.printStackTrace();
+			this.getLogger().severe(e);
 		}
 	}
 
 	private StringBuilder getAllAddinData() {
 		File file = new File(JavaAddinRoot);
 		if (!file.exists()) return null;
-		
+
 		StringBuilder res = new StringBuilder();
 		File[] directories = file.listFiles();
+		if (directories == null) return null;
 		for(int i=0; i<directories.length; i++) {
 			if (directories[i].isDirectory()) {
 				if (res.length() > 0) {

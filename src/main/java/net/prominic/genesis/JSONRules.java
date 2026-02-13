@@ -35,15 +35,22 @@ public class JSONRules {
 	private String m_commandPath;
 	private GLogger m_logger;
 	private StringBuilder m_logBuilder;
+	private int m_depth;
 
 	private final String JSON_VERSION = "1.0.0";
+	private static final int MAX_DEPENDENCY_DEPTH = 10;
 
 	public JSONRules(Session session, String catalog, String configPath, String commandPath, GLogger logger) {
+		this(session, catalog, configPath, commandPath, logger, 0);
+	}
+
+	private JSONRules(Session session, String catalog, String configPath, String commandPath, GLogger logger, int depth) {
 		m_session = session;
 		m_catalog = catalog;
 		m_configPath = configPath;
 		m_commandPath = commandPath;
 		m_logger = logger;
+		m_depth = depth;
 	}
 
 	public boolean execute(String json) {
@@ -105,7 +112,7 @@ public class JSONRules {
 		}
 
 		JSONArray steps = (JSONArray) obj.get("steps");
-		if (steps.size() == 0) {
+		if (steps == null || steps.size() == 0) {
 			log("Invalid JSON structure (no steps defined)");
 			return false;
 		}
@@ -132,27 +139,59 @@ public class JSONRules {
 		try {
 			if (obj.containsKey("notesversion")) {
 				String[] requireVersion = ((String) obj.get("notesversion")).split("\\.");
-				String[] sessionVersion = m_session.getNotesVersion().split("\\.");
+				String[] sessionVersion = parseNotesVersion(m_session.getNotesVersion());
 
-				for(int i=0; i<=2; i++) {
+				int parts = Math.min(requireVersion.length, sessionVersion.length);
+				parts = Math.min(parts, 3);
+				for(int i=0; i<parts; i++) {
 					int requireSubVersion = Integer.parseInt(requireVersion[i]);
 					int sessionSubVersion = Integer.parseInt(sessionVersion[i]);
 
 					if (sessionSubVersion > requireSubVersion) {
-						i = 2;
+						break;
 					}
 					else if(sessionSubVersion < requireSubVersion) {
 						res = false;
-						i = 2;
+						break;
 					}
 				}
 			}
 		} catch (NotesException e) {
-			e.printStackTrace();
+			log(e);
+			res = false;
+		} catch (NumberFormatException e) {
+			log("Failed to parse Notes version: " + e.getMessage());
 			res = false;
 		}
 
 		return res;
+	}
+
+	/*
+	 * Parse HCL Domino version string into numeric parts.
+	 * Known formats:
+	 *   "Release 14.0|December 06, 2023"
+	 *   "Release 12.0.2|November 15, 2022"
+	 *   "Release 12.0.1 FP1|June 15, 2022"
+	 *   "Release 11.0.1 FP4|March 30, 2021"
+	 *   "Build V1202_03222023"
+	 */
+	private String[] parseNotesVersion(String raw) {
+		// strip pipe and everything after: "Release 12.0.2|Nov..." -> "Release 12.0.2"
+		if (raw.contains("|")) {
+			raw = raw.substring(0, raw.indexOf("|"));
+		}
+		// strip "Release " prefix
+		if (raw.startsWith("Release ")) {
+			raw = raw.substring("Release ".length());
+		}
+		// strip Fix Pack suffix: "12.0.1 FP1" -> "12.0.1"
+		if (raw.contains(" ")) {
+			raw = raw.substring(0, raw.indexOf(" "));
+		}
+		raw = raw.trim();
+
+		return raw.split("\\.");
 	}
 
 	private boolean isValidVersionJSON(String versionjson) {
@@ -280,6 +319,11 @@ public class JSONRules {
 	private void doDependencies(JSONArray list) {
 		if (list == null || list.size() == 0) return;
 
+		if (m_depth >= MAX_DEPENDENCY_DEPTH) {
+			log("Maximum dependency depth reached (" + MAX_DEPENDENCY_DEPTH + "). Stopping.");
+			return;
+		}
+
 		try {
 			for(int i=0; i<list.size(); i++) {
 				String v = (String) list.get(i);
@@ -287,7 +331,7 @@ public class JSONRules {
 				log("Dependency detected: " + v);
 
 				StringBuilder appJSON = HTTP.get(m_catalog + "/package?openagent&id=" + v);
-				JSONRules dependency = new JSONRules(this.m_session, this.m_catalog, this.m_configPath, this.m_commandPath, this.m_logger);
+				JSONRules dependency = new JSONRules(this.m_session, this.m_catalog, this.m_configPath, this.m_commandPath, this.m_logger, m_depth + 1);
 				dependency.execute(appJSON.toString());
 			}
 		} catch (IOException e) {
@@ -416,8 +460,8 @@ public class JSONRules {
 			if (replace) {
 				log("> replace: true");
 				database = m_session.getDatabase(null, filePath);
-				log("> database will be deleted: " + database.getFilePath());
 				if (database != null && database.isOpen()) {
+					log("> database will be deleted: " + database.getFilePath());
 					database.remove();
 				}
 			}
@@ -921,7 +965,6 @@ public class JSONRules {
 			m_logBuilder = new StringBuilder();
 		}
 
-		e.printStackTrace();
 		m_logger.severe(e);
 
 		String message = e.getLocalizedMessage();
@@ -930,7 +973,7 @@ public class JSONRules {
 		}
 
 		m_logBuilder.append(message);
-		m_logBuilder.append(System.getProperty("line.separator"));	
+		m_logBuilder.append(System.getProperty("line.separator"));
 	}
 
 	private void log(Object o) {
@@ -938,7 +981,7 @@ public class JSONRules {
 			m_logBuilder = new StringBuilder();
 		}
 
-		System.out.println(o.toString());
+		m_logger.info(o.toString());
 		m_logBuilder.append(o.toString());
 		m_logBuilder.append(System.getProperty("line.separator"));
 	}

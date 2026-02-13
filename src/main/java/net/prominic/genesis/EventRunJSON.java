@@ -3,6 +3,7 @@ package net.prominic.genesis;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 
@@ -42,14 +43,14 @@ public class EventRunJSON extends Event {
 			}
 		} catch (Exception e) {
 			this.getLogger().severe(e);
-			e.printStackTrace();
 		}
 	}
 
 	private void processFile(File file) throws FileNotFoundException, UnsupportedEncodingException {
 		String message = "OK";
+		FileReader fr = null;
 		try {
-			FileReader fr = new FileReader(file);
+			fr = new FileReader(file);
 			this.getLogger().info(String.format("> %s is going to be processed", file.getName()));
 
 			JSONRules rules = new JSONRules(session, Catalog, JavaAddinConfig, JavaAddinCommand, getLogger());
@@ -58,17 +59,18 @@ public class EventRunJSON extends Event {
 				message = "The json file can't be processed";
 			}
 
-			fr.close();
 			file.delete();
 			this.getLogger().info(String.format("> file has been processed and deleted: %s", file.getName()));
 		} catch (Exception e) {
 			this.getLogger().severe(e);
-			e.printStackTrace();
 			message = e.getMessage();
 			if (message == null || message.isEmpty()) {
 				message = "an undefined exception was thrown";
 			}
 		} finally {
+			if (fr != null) {
+				try { fr.close(); } catch (IOException e) { /* ignore */ }
+			}
 			PrintWriter writer = new PrintWriter(JavaAddinJSONResponse + File.separator + file.getName(), "UTF-8");
 			writer.println(message);
 			writer.close();

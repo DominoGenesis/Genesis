@@ -26,3 +26,9 @@ buildNumber.properties
 # Maven
 log/
 target/
+
+# VS Code
+.vscode/
+
+# Claude
+.claude/

@@ -93,7 +93,7 @@ public class ProgramConfig {
 
 			return true;
 		} catch(Exception e) {
-			e.printStackTrace();
+			m_logger.severe(e);
 		}
 
 		return false;
@@ -126,7 +126,7 @@ public class ProgramConfig {
 
 			return true;
 		} catch(Exception e) {
-			e.printStackTrace();
+			m_logger.severe(e);
 		}
 
 		return false;
@@ -237,7 +237,6 @@ public class ProgramConfig {
 
 	private void log(String message) {
 		m_logger.info(m_addinName + " " + message);
-		System.out.println(m_addinName + " " + message);
 	}
 
 }

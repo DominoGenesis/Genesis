@@ -1,13 +1,11 @@
 package net.prominic.utils;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -21,14 +19,14 @@ public class HTTP {
 		con.setDoOutput(true);
 		con.setRequestMethod("POST");
 		con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-		con.getOutputStream().write(data.getBytes(), 0, data.length());
+		byte[] bytes = data.getBytes("UTF-8");
+		con.getOutputStream().write(bytes, 0, bytes.length);
 
 		return response(con);
 	}
 
 	public static StringBuilder get(String endpoint) throws IOException {
 		HttpURLConnection con = getConnection(endpoint);
-		
 
 		con.setRequestMethod("GET");
 
@@ -50,21 +48,20 @@ public class HTTP {
 			throw new IllegalArgumentException("Unexpected protocol: " + protocol);			
 		}
 
-		con.setConnectTimeout(5000); //set timeout to 5 seconds
+		con.setConnectTimeout(5000);
+		con.setReadTimeout(30000);
 
 		return con;
 	}
 
 	private static StringBuilder response(HttpURLConnection con) throws IOException {
-		// handle error response code it occurs
 		int responseCode = con.getResponseCode();
-		InputStream inputStream;
-		if (responseCode >= 200 && responseCode <= 302) {
-			inputStream = con.getInputStream();
-		} else {
-			inputStream = con.getErrorStream();
+		if (responseCode < 200 || responseCode > 302) {
+			con.disconnect();
+			throw new IOException("HTTP error: " + responseCode);
 		}
 
+		InputStream inputStream = con.getInputStream();
 		InputStreamReader isr = new InputStreamReader(inputStream);
 		BufferedReader in = new BufferedReader(isr);
 		StringBuilder response = new StringBuilder();
@@ -80,7 +77,7 @@ public class HTTP {
 		return response;
 	}
 
-	public static boolean saveFile(URL download, String filePath) {
+	public static boolean saveFile(URL download, String filePath) throws IOException {
 		ReadableByteChannel rbc = null;
 		FileOutputStream fos = null;
 		try {
@@ -88,15 +85,6 @@ public class HTTP {
 			fos = new FileOutputStream(filePath);
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 			return true;
-		}
-		catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
 		}
 		finally {
 			if (fos != null) {
@@ -114,6 +102,5 @@ public class HTTP {
 				}
 			}
 		}
-		return false;
 	}
 }
