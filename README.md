@@ -19,16 +19,23 @@ mvn package
 
 # Deploy on Domino server
 
-1) Upload Genesis.jar to the Domino program directory:
+1) Upload Genesis.jar to the JavaAddin folder on Domino server (on Windows it's under the executable directory, on Linux it's under the notesdata directory):
 
 ```
-JavaAddin/Genesis.jar
+JavaAddin/Genesis/Genesis-1.0.0.jar
 ```
 
-2) Add to notes.ini (semicolon separator on Windows, colon on Linux):
+2) Register in notes.ini:
 
 ```
-JAVAUSERCLASSES=./JavaAddin/Genesis.jar
+JavaUserClassesExt=GJA_Genesis
+GJA_Genesis=JavaAddin/Genesis/Genesis-1.0.0.jar
+```
+
+If you already have other addins registered, add Genesis to the existing list:
+
+```
+JavaUserClassesExt=GJA_Genesis,GJA_DominoMeter,GJA_DesignSync
 ```
 
 3) Create config file at `JavaAddin/Genesis/config.txt`:
