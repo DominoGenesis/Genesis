@@ -1,39 +1,37 @@
 # Genesis
 
-Java addin that manages other Java Addins
+Java addin for HCL Domino that manages other Java Addins.
 
-# Build Genesis
+# Build
 
 1) Install Maven
-2) Add Notes.jar to your maven repo, that will make it accessible to Maven
+2) Add Notes.jar to your local Maven repository:
 
 ```
-mvn install:install-file -Dfile=path\to\Notes.jar
+mvn install:install-file -Dfile=path/to/Notes.jar -DgroupId=lotus.notes -DartifactId=notes -Dversion=10.0 -Dpackaging=jar
 ```
 
-3) Build Genesis.jar
+3) Build Genesis.jar:
 
 ```
 mvn package
 ```
 
-This should create a Genesis.jar for you which you can deploy on Domino server after all.
+# Deploy on Domino server
 
-# How to register Genesis on Domino server
-
-1) Upload file to Domino server (on Windows it's in the Domino executable folder).
-
-JavaAddin\Genesis.jar
-
-2) Register Java addin in Domino environment (if you already have Addins there, keep in mind that separator is semicolon on Windows and colon on Linux)
+1) Upload Genesis.jar to the Domino program directory:
 
 ```
-JAVAUSERCLASSES=.\JavaAddin\Genesis.jar
+JavaAddin/Genesis.jar
 ```
 
-3) Create a config file at:
+2) Add to notes.ini (semicolon separator on Windows, colon on Linux):
 
-JavaAddin\Genesis\config.txt
+```
+JAVAUSERCLASSES=./JavaAddin/Genesis.jar
+```
+
+3) Create config file at `JavaAddin/Genesis/config.txt`:
 
 ```
 #Fri Feb 13 14:46:43 CET 2026
@@ -41,18 +39,30 @@ version=1.0.0
 runjava=Genesis
 ```
 
-# How to run Genesis
+# Run
 
 ```
 load runjava Genesis
 ```
 
-# Example of commands
+With a custom catalog:
+
+```
+load runjava Genesis appstore
+load runjava Genesis dev
+load runjava Genesis https://your-server.com/gc.nsf
+```
+
+# Commands
 
 ```
 tell Genesis help
-```
-
-```
 tell Genesis info
+tell Genesis check
+tell Genesis state
+tell Genesis list
+tell Genesis install <id>
+tell Genesis update <name>
+tell Genesis sign <dbpath>
+tell Genesis runjson <filepath>
 ```
