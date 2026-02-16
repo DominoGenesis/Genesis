@@ -18,6 +18,7 @@ import net.prominic.genesis.JSONRules;
 import net.prominic.genesis.ProgramConfig;
 import net.prominic.gja_v085.GConfig;
 import net.prominic.gja_v085.JavaServerAddinGenesis;
+import net.prominic.gja_v085.utils.DominoUtils;
 import net.prominic.utils.GenesisUtils;
 import net.prominic.utils.HTTP;
 
@@ -343,7 +344,7 @@ public class Genesis extends JavaServerAddinGenesis {
 		} catch (NotesException e) {
 			e.printStackTrace();
 		} finally {
-			net.prominic.gja_v085.utils.DominoUtils.recycle(serverDoc, view);
+			DominoUtils.recycle(serverDoc, view);
 		}
 
 		logMessage("[MyAccountDominoPerformanceLogging - completed]");
@@ -579,8 +580,7 @@ public class Genesis extends JavaServerAddinGenesis {
 		if (m_ab != null) {
 			ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args, m_logger);
 			pc.setState(m_ab, ProgramConfig.UNLOAD);		// set program documents in UNLOAD state
-			net.prominic.gja_v085.utils.DominoUtils.recycle(m_ab);
-			m_ab = null;
+			DominoUtils.recycle(m_ab);
 		}
 	}
 

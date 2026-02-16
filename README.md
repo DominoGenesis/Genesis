@@ -25,10 +25,20 @@ This should create a Genesis.jar for you which you can deploy on Domino server a
 
 JavaAddin\Genesis.jar
 
-2) Register Java addin in Domino environment (if you already have Addins there, keep in mind that separator is semicolon on Windows and colon on Linux) 
+2) Register Java addin in Domino environment (if you already have Addins there, keep in mind that separator is semicolon on Windows and colon on Linux)
 
 ```
 JAVAUSERCLASSES=.\JavaAddin\Genesis.jar
+```
+
+3) Create a config file at:
+
+JavaAddin\Genesis\config.txt
+
+```
+#Fri Feb 13 14:46:43 CET 2026
+version=1.0.0
+runjava=Genesis
 ```
 
 # How to run Genesis
