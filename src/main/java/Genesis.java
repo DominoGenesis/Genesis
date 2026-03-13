@@ -41,7 +41,7 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2026-02-13";
+		return "2026-03-13";
 	}
 
 	@Override
@@ -184,25 +184,6 @@ public class Genesis extends JavaServerAddinGenesis {
 		return true;
 	}
 
-	private static final String[] DEFAULT_ALLOWED_HOSTS = {
-		"appstore.dominogenesis.com",
-		"domino-1.dmytro.cloud"
-	};
-
-	private boolean isHostAllowed(String host) {
-		String hostname = host.trim().toLowerCase();
-
-		if (Arrays.asList(DEFAULT_ALLOWED_HOSTS).contains(hostname)) {
-			return true;
-		}
-
-		String configuredHosts = GConfig.get(this.m_javaAddinConfig, "allowed_hosts");
-		if (configuredHosts != null) {
-			return Arrays.asList(configuredHosts.toLowerCase().split(",")).contains(hostname);
-		}
-		return false;
-	}
-
 	private void origin(String cmd) {
 		// validate command
 		String[] parts = cmd.split("\\s+");
@@ -214,14 +195,6 @@ public class Genesis extends JavaServerAddinGenesis {
 		// get addin name and it's JSON
 		String host = parts[1];
 		String secret = parts[2];
-
-		// validate host against whitelist to prevent SSRF
-		if (!isHostAllowed(host)) {
-			logMessage("Host not allowed: " + host);
-			logMessage("Allowed hosts: " + Arrays.toString(DEFAULT_ALLOWED_HOSTS));
-			logMessage("Configure additional hosts via 'allowed_hosts' in config.txt");
-			return;
-		}
 
 		// install app by id
 		String buf = " " + secret + " ";
@@ -443,14 +416,14 @@ public class Genesis extends JavaServerAddinGenesis {
 				buf = buf.replace(String.format("{%d}", i), parts[i + 2]);
 			}
 
-			JSONRules rules = new JSONRules(m_session, this.m_catalog, configPath, this.m_javaAddinCommand, m_logger);
+			JSONRules rules = new JSONRules(m_session, host, configPath, this.m_javaAddinCommand, m_logger);
 			boolean res = rules.execute(buf);
 			if (!res) {
 				logMessage("The package could not be executed");
 				return;
 			}
 
-			logInstall(m_catalog, id, res, rules.getLogData().toString());
+			logInstall(host, id, res, rules.getLogData().toString());
 			m_logger.info(rules.getLogData().toString());
 
 			update(host, secret, cmd, depth + 1);
@@ -556,8 +529,6 @@ public class Genesis extends JavaServerAddinGenesis {
 	 * Extend default Help
 	 */
 	protected void showHelpExt() {
-		logMessage("   help             Show help information (or -h)");
-
 		logMessage("   check            Check connection with Catalog");
 		logMessage("   list             List of available Java addin in the Catalog");
 		logMessage("   state            Show all installed addin (active and non active)");
