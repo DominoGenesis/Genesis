@@ -18,6 +18,7 @@ import net.prominic.genesis.JSONRules;
 import net.prominic.genesis.ProgramConfig;
 import net.prominic.gja_v085.GConfig;
 import net.prominic.gja_v085.JavaServerAddinGenesis;
+import net.prominic.gja_v085.utils.DominoUtils;
 import net.prominic.utils.GenesisUtils;
 import net.prominic.utils.HTTP;
 
@@ -183,22 +184,21 @@ public class Genesis extends JavaServerAddinGenesis {
 		return true;
 	}
 
-	private static final String[] ALLOWED_HOSTS = {
+	private static final String[] DEFAULT_ALLOWED_HOSTS = {
 		"appstore.dominogenesis.com",
 		"domino-1.dmytro.cloud"
 	};
 
 	private boolean isHostAllowed(String host) {
-		try {
-			java.net.URL url = new java.net.URL(host);
-			String hostname = url.getHost().toLowerCase();
-			for (String allowed : ALLOWED_HOSTS) {
-				if (hostname.equals(allowed) || hostname.endsWith("." + allowed)) {
-					return true;
-				}
-			}
-		} catch (java.net.MalformedURLException e) {
-			return false;
+		String hostname = host.trim().toLowerCase();
+
+		if (Arrays.asList(DEFAULT_ALLOWED_HOSTS).contains(hostname)) {
+			return true;
+		}
+
+		String configuredHosts = GConfig.get(this.m_javaAddinConfig, "allowed_hosts");
+		if (configuredHosts != null) {
+			return Arrays.asList(configuredHosts.toLowerCase().split(",")).contains(hostname);
 		}
 		return false;
 	}
@@ -218,7 +218,8 @@ public class Genesis extends JavaServerAddinGenesis {
 		// validate host against whitelist to prevent SSRF
 		if (!isHostAllowed(host)) {
 			logMessage("Host not allowed: " + host);
-			logMessage("Allowed hosts: " + Arrays.toString(ALLOWED_HOSTS));
+			logMessage("Allowed hosts: " + Arrays.toString(DEFAULT_ALLOWED_HOSTS));
+			logMessage("Configure additional hosts via 'allowed_hosts' in config.txt");
 			return;
 		}
 
@@ -343,7 +344,7 @@ public class Genesis extends JavaServerAddinGenesis {
 		} catch (NotesException e) {
 			e.printStackTrace();
 		} finally {
-			net.prominic.gja_v085.utils.DominoUtils.recycle(serverDoc, view);
+			DominoUtils.recycle(serverDoc, view);
 		}
 
 		logMessage("[MyAccountDominoPerformanceLogging - completed]");
@@ -579,8 +580,7 @@ public class Genesis extends JavaServerAddinGenesis {
 		if (m_ab != null) {
 			ProgramConfig pc = new ProgramConfig(this.getJavaAddinName(), this.args, m_logger);
 			pc.setState(m_ab, ProgramConfig.UNLOAD);		// set program documents in UNLOAD state
-			net.prominic.gja_v085.utils.DominoUtils.recycle(m_ab);
-			m_ab = null;
+			DominoUtils.recycle(m_ab);
 		}
 	}
 
