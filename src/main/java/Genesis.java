@@ -36,12 +36,12 @@ public class Genesis extends JavaServerAddinGenesis {
 
 	@Override
 	protected String getJavaAddinVersion() {
-		return "1.0.0";
+		return "1.0.1";
 	}
 
 	@Override
 	protected String getJavaAddinDate() {
-		return "2026-03-13";
+		return "2026-05-11";
 	}
 
 	@Override
@@ -51,11 +51,14 @@ public class Genesis extends JavaServerAddinGenesis {
 			if ("dev".equals(m_catalog)) {
 				m_catalog = "https://domino-1.dmytro.cloud/gc.nsf";
 			}
-			if ("appstore".equals(m_catalog)) {
+			else if ("appstore".equals(m_catalog)) {
 				m_catalog = "https://appstore.dominogenesis.com/gc.nsf";
 			}
+			setConfigValue("catalog", m_catalog);
 		} else {
-			m_catalog = "https://appstore.dominogenesis.com/gc.nsf";
+			String saved = getConfigValue("catalog");
+			if (saved != null) saved = saved.trim();
+			m_catalog = (saved != null && !saved.isEmpty()) ? saved : "https://appstore.dominogenesis.com/gc.nsf";
 		}
 
 		// check if connection could be established
