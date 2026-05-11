@@ -22,14 +22,14 @@ mvn package
 1) Upload Genesis.jar to the JavaAddin folder on Domino server (on Windows it's under the executable directory, on Linux it's under the notesdata directory):
 
 ```
-JavaAddin/Genesis/Genesis-1.0.0.jar
+JavaAddin/Genesis/Genesis-1.0.1.jar
 ```
 
 2) Register in notes.ini:
 
 ```
 JavaUserClassesExt=GJA_Genesis
-GJA_Genesis=JavaAddin/Genesis/Genesis-1.0.0.jar
+GJA_Genesis=JavaAddin/Genesis/Genesis-1.0.1.jar
 ```
 
 If you already have other addins registered, add Genesis to the existing list:
@@ -42,7 +42,7 @@ JavaUserClassesExt=GJA_Genesis,GJA_DominoMeter,GJA_DesignSync
 
 ```
 #Fri Feb 13 14:46:43 CET 2026
-version=1.0.0
+version=1.0.1
 runjava=Genesis
 ```
 
@@ -59,6 +59,8 @@ load runjava Genesis appstore
 load runjava Genesis dev
 load runjava Genesis https://your-server.com/gc.nsf
 ```
+
+The resolved catalog URL is saved to `config.txt` (key `catalog`) and reused on subsequent restarts, so you only need to pass the argument once. Passing a new argument overwrites the saved value. If no argument is given and no saved value exists, Genesis falls back to `https://appstore.dominogenesis.com/gc.nsf`.
 
 # Commands
 
